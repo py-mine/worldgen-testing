@@ -18,7 +18,7 @@ palette = {**palette, **{v: k for k, v in palette.items()}}
 
 def blank_chunk() -> numpy.ndarray:  # used to test dumping to a obj file
     #                       y   z   x
-    chunk = numpy.ndarray((16, 256, 16), numpy.uint32)  # kinda how chunks are stored in pymine
+    chunk = numpy.ndarray((256, 16, 16), numpy.uint32)  # kinda how chunks are stored in pymine
     chunk.fill(0)
 
     chunk[0:5] = palette["bedrock"]
@@ -57,7 +57,7 @@ def dump_to_obj(file, chunk: numpy.ndarray) -> None:
                 if i % 128 == 0:
                     print(f"{i:05.0f}/{total_len} (1/2)\r", end="")
 
-                if chunk[x, y, z] == 0:  # air
+                if chunk[y, z, x] == 0:  # air
                     continue
 
                 append_point(x, y, z)
@@ -79,7 +79,7 @@ def dump_to_obj(file, chunk: numpy.ndarray) -> None:
                 if i % 128 == 0:
                     print(f"{i:05.0f}/{total_len} (2/2)\r", end="")
 
-                block = chunk[x, y, z]
+                block = chunk[y, z, x]
 
                 if block == 0:  # air
                     continue
