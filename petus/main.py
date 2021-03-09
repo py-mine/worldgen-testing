@@ -52,7 +52,7 @@ def dump_to_obj(file, chunk: numpy.ndarray) -> None:
                 i = (y + 1) * (z + 1) * (x + 1)
 
                 if i % 32 == 0:
-                    print(f"{i}/{total_len} (1/2)\r", end="")
+                    print(f"{i:05.0f}/{total_len} (1/2)\r", end="")
 
                 if chunk[x, y, z] == 0:
                     continue
@@ -66,25 +66,27 @@ def dump_to_obj(file, chunk: numpy.ndarray) -> None:
                 append_point(x + 1, y, z + 1)
                 append_point(x + 1, y + 1, z + 1)
 
+    print()
+
     for y in range(256):
         for z in range(16):
             for x in range(16):
                 i = (y + 1) * (z + 1) * (x + 1)
 
                 if i % 32 == 0:
-                    print(f"{i}/{total_len} (1/2)\r", end="")
+                    print(f"{i:05.0f}/{total_len} (2/2)\r", end="")
 
                 if chunk[x, y, z] == 0:
                     continue
 
-                i1 = rpoints.get((e[0], e[1], e[2])) + 1
-                i2 = rpoints.get((e[0] + 1, e[1], e[2])) + 1
-                i3 = rpoints.get((e[0], e[1] + 1, e[2])) + 1
-                i4 = rpoints.get((e[0], e[1], e[2] + 1)) + 1
-                i5 = rpoints.get((e[0] + 1, e[1] + 1, e[2])) + 1
-                i6 = rpoints.get((e[0], e[1] + 1, e[2] + 1)) + 1
-                i7 = rpoints.get((e[0] + 1, e[1], e[2] + 1)) + 1
-                i8 = rpoints.get((e[0] + 1, e[1] + 1, e[2] + 1)) + 1
+                i1 = rpoints.get((x, y, z)) + 1
+                i2 = rpoints.get((x + 1, y, z)) + 1
+                i3 = rpoints.get((x, y + 1, z)) + 1
+                i4 = rpoints.get((x, y, z + 1)) + 1
+                i5 = rpoints.get((x + 1, y + 1, z)) + 1
+                i6 = rpoints.get((x, y + 1, z + 1)) + 1
+                i7 = rpoints.get((x + 1, y, z + 1)) + 1
+                i8 = rpoints.get((x + 1, y + 1, z + 1)) + 1
 
                 append_face(f"f {i1} {i2} {i7} {i4}")
                 append_face(f"f {i1} {i2} {i5} {i3}")
