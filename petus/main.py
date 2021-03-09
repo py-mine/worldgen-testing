@@ -81,7 +81,7 @@ def dump_to_obj(file, chunk: numpy.ndarray) -> None:
 
     print()
 
-    file.write("\n".join([f"v {p[0]} {p[1]} {p[2]}" for p in points.values()]) + "\n" + "".join(faces.values()))
+    file.write("\n".join([f"v {p[0]} {p[1]} {p[2]}" for p in points.values()]) + "\n" + "\n".join(faces.values()))
 
 
 chunk = blank_chunk()
