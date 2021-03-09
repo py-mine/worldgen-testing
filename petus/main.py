@@ -1,4 +1,5 @@
 from noise import pnoise1 as perlin  # pip install noise
+from time import perf_counter as pf
 import numpy
 
 
@@ -29,6 +30,8 @@ def blank_chunk() -> numpy.ndarray:  # used to test dumping to a obj file
 
 
 def dump_to_obj(file, chunk: numpy.ndarray) -> None:
+    start = pf()
+
     points = {}
     rpoints = {}
     faces = {}
@@ -98,6 +101,8 @@ def dump_to_obj(file, chunk: numpy.ndarray) -> None:
     print()
 
     file.write("\n".join([f"v {p[0]} {p[1]} {p[2]}" for p in points.values()]) + "\n" + "\n".join(faces.values()))
+
+    print(f"Completed in {pf() - start:02.2f} seconds.")
 
 
 chunk = blank_chunk()
