@@ -104,7 +104,12 @@ def dump_to_obj(file, chunk: numpy.ndarray) -> None:
 
     print()
 
-    file.write("mtllib test.mtl\n" + "\n".join([f"v {p[0]} {p[1]} {p[2]}" for p in points.values()]) + "\n" + "\n".join(faces.values()))
+    file.write(
+        "mtllib test.mtl\n"
+        + "\n".join([f"v {p[0]} {p[1]} {p[2]}" for p in points.values()])
+        + "\n"
+        + "\n".join(faces.values())
+    )
 
     print(f"Completed in {pf() - start:02.2f} seconds.")
 
