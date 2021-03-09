@@ -30,15 +30,19 @@ def blank_chunk() -> numpy.ndarray:  # used to test dumping to a obj file
 
 def dump_to_obj(file, chunk: numpy.ndarray) -> None:
     points = {}
+    rpoints = {}
     faces = {}
+    rfaces = {}
 
     def append_point(*p) -> None:
-        if not points.get(p):
+        if not rpoints.get(p):
             points[len(points) - 1] = p
+            rpoints[p] = len(points) - 1
 
     def append_face(f) -> None:
-        if not faces.get(f):
+        if not rfaces.get(f):
             faces[len(faces) - 1] = f
+            rfaces[f] = len(faces) - 1
 
     total_len = len(chunk.flatten())
 
@@ -48,31 +52,39 @@ def dump_to_obj(file, chunk: numpy.ndarray) -> None:
                 i = (y + 1) * (z + 1) * (x + 1)
 
                 if i % 32 == 0:
-                    print(f"{i}/{total_len}\r", end="")
+                    print(f"{i}/{total_len} (1/2)\r", end="")
+
+                if chunk[x, y, z] == 0:
+                    continue
 
                 append_point(x, y, z)
-                i1 = len(points) + 1
-
                 append_point(x + 1, y, z)
-                i2 = len(points) + 1
-
                 append_point(x, y + 1, z)
-                i3 = len(points) + 1
-
                 append_point(x, y, z + 1)
-                i4 = len(points) + 1
-
                 append_point(x + 1, y + 1, z)
-                i5 = len(points) + 1
-
                 append_point(x, y + 1, z + 1)
-                i6 = len(points) + 1
-
                 append_point(x + 1, y, z + 1)
-                i7 = len(points) + 1
-
                 append_point(x + 1, y + 1, z + 1)
-                i8 = len(points) + 1
+
+    for y in range(256):
+        for z in range(16):
+            for x in range(16):
+                i = (y + 1) * (z + 1) * (x + 1)
+
+                if i % 32 == 0:
+                    print(f"{i}/{total_len} (1/2)\r", end="")
+
+                if chunk[x, y, z] == 0:
+                    continue
+
+                i1 = rpoints.get((e[0], e[1], e[2])) + 1
+                i2 = rpoints.get((e[0] + 1, e[1], e[2])) + 1
+                i3 = rpoints.get((e[0], e[1] + 1, e[2])) + 1
+                i4 = rpoints.get((e[0], e[1], e[2] + 1)) + 1
+                i5 = rpoints.get((e[0] + 1, e[1] + 1, e[2])) + 1
+                i6 = rpoints.get((e[0], e[1] + 1, e[2] + 1)) + 1
+                i7 = rpoints.get((e[0] + 1, e[1], e[2] + 1)) + 1
+                i8 = rpoints.get((e[0] + 1, e[1] + 1, e[2] + 1)) + 1
 
                 append_face(f"f {i1} {i2} {i7} {i4}")
                 append_face(f"f {i1} {i2} {i5} {i3}")
