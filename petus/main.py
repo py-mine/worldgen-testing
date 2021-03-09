@@ -71,6 +71,8 @@ def dump_to_obj(file, chunk: numpy.ndarray) -> None:
 
     print()
 
+    previous_texture = -1
+
     for y in range(256):
         for z in range(16):
             for x in range(16):
@@ -79,8 +81,13 @@ def dump_to_obj(file, chunk: numpy.ndarray) -> None:
                 if i % 128 == 0:
                     print(f"{i:05.0f}/{total_len} (2/2)\r", end="")
 
-                if chunk[x, y, z] == 0:  # air
+                block = chunk[x, y, z]
+
+                if block == 0:  # air
                     continue
+
+                if previous_texture != block:
+                    append_face(f"usemtl {palette[block]}")
 
                 i1 = rpoints.get((x, y, z)) + 1
                 i2 = rpoints.get((x + 1, y, z)) + 1
