@@ -51,7 +51,7 @@ def dump_to_obj(file, chunk: numpy.ndarray) -> None:
             for x in range(16):
                 i = (y + 1) * (z + 1) * (x + 1)
 
-                if i % 32 == 0:
+                if i % 128 == 0:
                     print(f"{i:05.0f}/{total_len} (1/2)\r", end="")
 
                 if chunk[x, y, z] == 0:
@@ -73,7 +73,7 @@ def dump_to_obj(file, chunk: numpy.ndarray) -> None:
             for x in range(16):
                 i = (y + 1) * (z + 1) * (x + 1)
 
-                if i % 32 == 0:
+                if i % 128 == 0:
                     print(f"{i:05.0f}/{total_len} (2/2)\r", end="")
 
                 if chunk[x, y, z] == 0:
