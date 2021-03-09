@@ -26,3 +26,21 @@ def blank_chunk() -> numpy.ndarray:  # used to test dumping to a obj file
     chunk[73:74] = palette["grass_block"]
 
     return chunk
+
+
+def dump_to_obj(file, chunk: numpy.ndarray) -> None:
+    out = set()
+
+    for y in range(len(chunk)):
+        for z in range(len(chunk[0])):
+            for x in range(len(chunk[0][0])):
+                if chunk[y][z][x] != palette["air"]:
+                    out.add(f"v {x} {y} {z}")
+
+    file.write("\n".join(out))
+
+
+chunk = blank_chunk()
+
+with open("test.obj", "w+") as f:
+    dump_to_obj(f, chunk)
