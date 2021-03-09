@@ -84,7 +84,7 @@ def dump_to_obj(file, chunk: numpy.ndarray) -> None:
                 if block == 0:  # air
                     continue
 
-                append_face(f"usemtl {palette[block]}")
+                block = palette[block]
 
                 i1 = rpoints.get((x, y, z)) + 1
                 i2 = rpoints.get((x + 1, y, z)) + 1
@@ -95,12 +95,12 @@ def dump_to_obj(file, chunk: numpy.ndarray) -> None:
                 i7 = rpoints.get((x + 1, y, z + 1)) + 1
                 i8 = rpoints.get((x + 1, y + 1, z + 1)) + 1
 
-                append_face(f"f {i1} {i2} {i7} {i4}")
-                append_face(f"f {i1} {i2} {i5} {i3}")
-                append_face(f"f {i4} {i7} {i8} {i6}")
-                append_face(f"f {i1} {i4} {i6} {i3}")
-                append_face(f"f {i2} {i5} {i8} {i7}")
-                append_face(f"f {i3} {i5} {i8} {i6}")
+                append_face(f"usemtl {block}\nf {i1} {i2} {i7} {i4}")
+                append_face(f"usemtl {block}\nf {i1} {i2} {i5} {i3}")
+                append_face(f"usemtl {block}\nf {i4} {i7} {i8} {i6}")
+                append_face(f"usemtl {block}\nf {i1} {i4} {i6} {i3}")
+                append_face(f"usemtl {block}\nf {i2} {i5} {i8} {i7}")
+                append_face(f"usemtl {block}\nf {i3} {i5} {i8} {i6}")
 
     print()
 
