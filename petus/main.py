@@ -29,14 +29,16 @@ def blank_chunk() -> numpy.ndarray:  # used to test dumping to a obj file
 
 
 def dump_to_obj(file, chunk: numpy.ndarray) -> None:
-    points = []
-    faces = []
+    points = {}
+    faces = {}
 
     def append_point(*p) -> None:
-        points.append(p)
+        if not points.get(p):
+            points[len(points) - 1] = p
 
     def append_face(f) -> None:
-        faces.append(f)
+        if not faces.get(f):
+            faces[len(faces) - 1] = f
 
     total_len = len(chunk.flatten())
 
@@ -81,7 +83,7 @@ def dump_to_obj(file, chunk: numpy.ndarray) -> None:
 
     print()
 
-    file.write("\n".join([f"v {p[0]} {p[1]} {p[2]}" for p in points]) + "\n" + "\n".join(faces))
+    file.write("\n".join([f"v {p[0]} {p[1]} {p[2]}" for p in points.values()]) + "\n" + "\n".join(faces.values()))
 
 
 chunk = blank_chunk()
