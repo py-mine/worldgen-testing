@@ -35,45 +35,51 @@ def dump_to_obj(file, chunk: numpy.ndarray) -> None:
     def append_point(*p) -> None:
         points[len(points) - 1] = p
 
-    def append_face(*f) -> None:
+    def append_face(f) -> None:
         faces[len(faces) - 1] = f
 
-    flattened = chunk.flatten()
+    total_len = len(chunk.flatten())
 
-    for i, p in enumerate(flattened):
-        if i % 15 == 0:
-            print(f"{i}/{len(flattened)}\r", end="")
+    for y in range(256):
+        for z in range(16):
+            for x in range(16):
+                i = (y + 1) * (z + 1) * (x + 1)
 
-        append_point(*p)
-        i1 = len(points) + 1
+                if i % 32 == 0:
+                    print(f"{i}/{total_len}\r", end="")
 
-        append_point(p[0] + 1, p[1], p[2])
-        i2 = len(points) + 1
+                append_point(x, y, z)
+                i1 = len(points) + 1
 
-        append_point(p[0], p[1] + 1, p[2])
-        i3 = len(points) + 1
+                append_point(x + 1, y, z)
+                i2 = len(points) + 1
 
-        append_point(p[0], p[1], p[2] + 1)
-        i4 = len(points) + 1
+                append_point(x, y + 1, z)
+                i3 = len(points) + 1
 
-        append_point(p[0] + 1, p[1] + 1, p[2])
-        i5 = len(points) + 1
+                append_point(x, y, z + 1)
+                i4 = len(points) + 1
 
-        append_point(p[0], p[1] + 1, p[2] + 1)
-        i6 = len(points) + 1
+                append_point(x + 1, y + 1, z)
+                i5 = len(points) + 1
 
-        append_point(p[0] + 1, p[1], p[2] + 1)
-        i7 = len(points) + 1
+                append_point(x, y + 1, z + 1)
+                i6 = len(points) + 1
 
-        append_point(p[0] + 1, p[1] + 1, p[2] + 1)
-        i8 = len(points) + 1
+                append_point(x + 1, y, z + 1)
+                i7 = len(points) + 1
 
-        append_face(f"f {i1} {i2} {i7} {i4}")
-        append_face(f"f {i1} {i2} {i5} {i3}")
-        append_face(f"f {i4} {i7} {i8} {i6}")
-        append_face(f"f {i1} {i4} {i6} {i3}")
-        append_face(f"f {i2} {i5} {i8} {i7}")
-        append_face(f"f {i3} {i5} {i8} {i6}")
+                append_point(x + 1, y + 1, z + 1)
+                i8 = len(points) + 1
+
+                append_face(f"f {i1} {i2} {i7} {i4}")
+                append_face(f"f {i1} {i2} {i5} {i3}")
+                append_face(f"f {i4} {i7} {i8} {i6}")
+                append_face(f"f {i1} {i4} {i6} {i3}")
+                append_face(f"f {i2} {i5} {i8} {i7}")
+                append_face(f"f {i3} {i5} {i8} {i6}")
+
+    print()
 
     file.write("\n".join([f"v {p[0]} {p[1]} {p[2]}" for p in points.values()]) + "\n" + "".join(faces.values()))
 
