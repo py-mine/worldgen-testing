@@ -57,7 +57,7 @@ def dump_to_obj(file, chunk: numpy.ndarray) -> None:
                 if i % 128 == 0:
                     print(f"{i:05.0f}/{total_len} (1/2)\r", end="")
 
-                if chunk[x, y, z] == 0:
+                if chunk[x, y, z] == 0:  # air
                     continue
 
                 append_point(x, y, z)
@@ -79,7 +79,7 @@ def dump_to_obj(file, chunk: numpy.ndarray) -> None:
                 if i % 128 == 0:
                     print(f"{i:05.0f}/{total_len} (2/2)\r", end="")
 
-                if chunk[x, y, z] == 0:
+                if chunk[x, y, z] == 0:  # air
                     continue
 
                 i1 = rpoints.get((x, y, z)) + 1
