@@ -5,7 +5,7 @@ import math
 import sys
 
 
-# here, a "chunk" refers to a 16x256x16 array of block states
+# here, a "chunk" refers to a 256x16x16 array of block states
 
 palette = {
     "air": 0,
