@@ -1,5 +1,6 @@
-from noise.perlin import SimplexNoise # pip install noise
+from noise.perlin import SimplexNoise  # pip install noise
 import numpy
+import math
 
 
 # here, a "chunk" refers to a 16x256x16 array of block states
@@ -28,30 +29,54 @@ def blank_chunk() -> numpy.ndarray:  # used to test dumping to a obj file
     return chunk
 
 
-def noisy_chunk() -> numpy.ndarray:
-    noise = SimplexNoise()
+def noisy_chunk(noise, chunk_x: int, chunk_z: int) -> numpy.ndarray:
     chunk = numpy.zeros((256, 16, 16), numpy.uint64)
-
     chunk[0] = palette["bedrock"]
+    height_map = numpy.zeros((16, 16), numpy.float32)
 
-    for y in range(1, 256):
+    x_offset = 16 * chunk_x
+    z_offset = 16 * chunk_z
+
+    for x in range(16):
         for z in range(16):
-            for x in range(16):
-                elevation = (noise.noise3(256/(y+1)/5, 16/(z+1)/5, 16/(x+1)/5) + 1) * 128
+            xx = (x + x_offset) / 16
+            zz = (z + z_offset) / 16
 
-                if elevation < 5:
-                    chunk[y, z, x] = palette["bedrock"]
-                elif elevation < 45:
-                    chunk[y, z, x] = palette["stone"]
-                elif elevation < 55:
-                    chunk[y, z, x] = palette["dirt"]
-                elif elevation < 56:
-                    chunk[y, z, x] = palette["grass"]
+            e = (
+                (noise.noise2(0.5 * xx, 0.5 * zz) + 1) / 2
+                + (noise.noise2(0.25 * xx, 0.25 * zz) + 1) / 2
+                + (noise.noise2(0.125 * xx, 0.125 * zz) + 1) / 2
+            )
+
+            e /= 0.5 + 0.25 + 0.125
+
+            height_map[x, z] = math.pow(e, 0.15)
+
+    for y in range(16):
+        for x in range(16):
+            for z in range(16):
+                y2 = int(height_map[x, z] * 64)
+                chunk[y2 - y, z, x] = palette["stone"]
 
     return chunk
 
 
-def dump_to_obj(file, chunk: numpy.ndarray) -> None:
+def dump_to_obj(file, chunks: dict) -> None:
+    amount = len(chunks)
+    joined_chunks = numpy.zeros((256, 16 * amount, 16 * amount))
+
+    for cxz, chunk in chunks.items():
+        cx, cz = cxz
+
+        cx *= -len(chunks) // 2
+        cz *= -len(chunks) // 2
+
+        # print(cz*16, cz*16+16)
+        # print(cx*16, cx*16+16)
+        print(cz, cx)
+
+        joined_chunks[..., cx*16:cx*16+16, cz*16:cz*16+16,] = chunk
+
     points = {}
     rpoints = {}
     faces = {}
@@ -67,12 +92,10 @@ def dump_to_obj(file, chunk: numpy.ndarray) -> None:
             faces[len(faces) - 1] = f
             rfaces[f] = len(faces) - 1
 
-    total_len = len(chunk.flatten())
-
-    for y in range(256):
-        for z in range(16):
-            for x in range(16):
-                if chunk[y, z, x] == 0:  # air
+    for y in range(joined_chunks.shape[0]):
+        for z in range(joined_chunks.shape[1]):
+            for x in range(joined_chunks.shape[2]):
+                if joined_chunks[y, z, x] == 0:  # air
                     continue
 
                 append_point(x, y, z)
@@ -84,10 +107,10 @@ def dump_to_obj(file, chunk: numpy.ndarray) -> None:
                 append_point(x + 1, y, z + 1)
                 append_point(x + 1, y + 1, z + 1)
 
-    for y in range(256):
-        for z in range(16):
-            for x in range(16):
-                block = chunk[y, z, x]
+    for y in range(joined_chunks.shape[0]):
+        for z in range(joined_chunks.shape[1]):
+            for x in range(joined_chunks.shape[2]):
+                block = joined_chunks[y, z, x]
 
                 if block == 0:  # air
                     continue
@@ -114,5 +137,11 @@ def dump_to_obj(file, chunk: numpy.ndarray) -> None:
 
 
 with open("test.obj", "w+") as f:
-    chunk = noisy_chunk()
-    dump_to_obj(f, chunk)
+    noise = SimplexNoise()
+    chunks = {}
+
+    for x in range(-1, 1):
+        for z in range(-1, 1):
+            chunks[x, z] = noisy_chunk(noise, x, z)
+
+    dump_to_obj(f, chunks)
