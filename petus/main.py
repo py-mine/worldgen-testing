@@ -126,13 +126,15 @@ def dump_to_obj(file, chunks: dict) -> None:
             rfaces[f] = len(faces) - 1
 
     for cx, cz in chunks.keys():
+        chunk = chunks[cx, cz]
+
         cxo = cx * 16
         czo = cz * 16
 
         for y in range(256):
             for z in range(16):
                 for x in range(16):
-                    if chunks[cx, cz][y, z, x] == 0:  # air
+                    if chunk[y, z, x] == 0:  # air
                         continue
 
                     tx = x + cxo
@@ -153,6 +155,8 @@ def dump_to_obj(file, chunks: dict) -> None:
         cxo = cx * 16
         czo = cz * 16
 
+        xzr = [0, 15]
+
         maxes = {}
 
         for y in range(256):
@@ -169,7 +173,7 @@ def dump_to_obj(file, chunks: dict) -> None:
         for y in range(256):
             for z in range(16):
                 for x in range(16):
-                    if y == 0 or maxes[z, x] == y or x in (0, 15) or z in (0, 15):
+                    if y == 0 or maxes[z, x] == y or x in xzr or z in xzr:
                         block = chunk[y, z, x]
 
                         if block == 0:  # air
