@@ -1,5 +1,7 @@
-from noise.perlin import SimplexNoise # pip install noise
+from noise.perlin import SimplexNoise  # pip install noise
+from time import perf_counter as pf
 import numpy
+import math
 
 
 # here, a "chunk" refers to a 16x256x16 array of block states
@@ -28,30 +30,75 @@ def blank_chunk() -> numpy.ndarray:  # used to test dumping to a obj file
     return chunk
 
 
-def noisy_chunk() -> numpy.ndarray:
-    noise = SimplexNoise()
+def noisy_chunk(noise, chunk_x: int, chunk_z: int) -> numpy.ndarray:
     chunk = numpy.zeros((256, 16, 16), numpy.uint64)
+    height_map = numpy.zeros((16, 16), numpy.float32)
+
+    x_offset = 16 * chunk_x
+    z_offset = 16 * chunk_z
 
     chunk[0] = palette["bedrock"]
 
-    for y in range(1, 256):
-        for z in range(16):
-            for x in range(16):
-                elevation = (noise.noise3(256/(y+1)/5, 16/(z+1)/5, 16/(x+1)/5) + 1) * 128
+    for y in range(4):
+        for x in range(16):
+            for z in range(16):
+                n = noise.noise3(x, y, z)
 
-                if elevation < 5:
-                    chunk[y, z, x] = palette["bedrock"]
-                elif elevation < 45:
-                    chunk[y, z, x] = palette["stone"]
-                elif elevation < 55:
-                    chunk[y, z, x] = palette["dirt"]
-                elif elevation < 56:
-                    chunk[y, z, x] = palette["grass"]
+                if y < 2:
+                    if n >= 0:
+                        chunk[y+1, z, x] = palette["bedrock"]
+                elif n > 0:
+                    chunk[y+1, z, x] = palette["bedrock"]
+
+    freq = 16
+    octv1 = 2
+    octv2 = 4
+    octv3 = 12
+
+    for x in range(16):
+        for z in range(16):
+            xx = (x + x_offset) / 16 / freq
+            zz = (z + z_offset) / 16 / freq
+
+            e = (
+                (noise.noise2(octv1 * xx, octv1 * zz) + 1) / 2 / octv1
+                + (noise.noise2(octv2 * xx, octv2 * zz) + 1) / 2 / octv2
+                + (noise.noise2(octv3 * xx, octv3 * zz) + 1) / 2 / octv3
+            )
+
+            e /= octv1 + octv2 + octv3
+
+            height_map[x, z] = math.pow(e, .45)
+
+    # print(min(height_map.flatten().tolist())*256, max(height_map.flatten().tolist())*256)
+
+    ebl1 = (palette["bedrock"], palette["stone"])
+    ebl2 = (palette["bedrock"], palette["stone"], palette["dirt"])
+
+    for y in range(32):
+        for x in range(16):
+            for z in range(16):
+                y2 = int(height_map[x, z] * 256)
+
+                y2_y_16 = y2 - y - 16
+
+                if y2_y_16 > 0 and chunk[y2_y_16, z, x] != palette["bedrock"]:
+                    chunk[y2_y_16, z, x] = palette["stone"]
+
+                y2_y_12 = y2 - y - 12
+
+                if y2_y_12 > 0 and chunk[y2_y_12, z, x] not in ebl1:
+                    chunk[y2_y_12, z, x] = palette["dirt"]
+
+                y2_y_11 = y2 - y - 11
+
+                if y2_y_11 > 0 and chunk[y2_y_11, z, x] not in ebl2:
+                    chunk[y2_y_11, z, x] = palette["grass"]
 
     return chunk
 
 
-def dump_to_obj(file, chunk: numpy.ndarray) -> None:
+def dump_to_obj(file, chunks: dict) -> None:
     points = {}
     rpoints = {}
     faces = {}
@@ -67,52 +114,81 @@ def dump_to_obj(file, chunk: numpy.ndarray) -> None:
             faces[len(faces) - 1] = f
             rfaces[f] = len(faces) - 1
 
-    total_len = len(chunk.flatten())
+    for cx, cz in chunks.keys():
+        cxo = cx * 16
+        czo = cz * 16
 
-    for y in range(256):
-        for z in range(16):
-            for x in range(16):
-                if chunk[y, z, x] == 0:  # air
-                    continue
+        for y in range(256):
+            for z in range(16):
+                for x in range(16):
+                    if chunks[cx, cz][y, z, x] == 0:  # air
+                        continue
 
-                append_point(x, y, z)
-                append_point(x + 1, y, z)
-                append_point(x, y + 1, z)
-                append_point(x, y, z + 1)
-                append_point(x + 1, y + 1, z)
-                append_point(x, y + 1, z + 1)
-                append_point(x + 1, y, z + 1)
-                append_point(x + 1, y + 1, z + 1)
+                    tx = x + cxo
+                    tz = z + czo
 
-    for y in range(256):
-        for z in range(16):
-            for x in range(16):
-                block = chunk[y, z, x]
+                    append_point(tx, y, tz)
+                    append_point(tx + 1, y, tz)
+                    append_point(tx, y + 1, tz)
+                    append_point(tx, y, tz + 1)
+                    append_point(tx + 1, y + 1, tz)
+                    append_point(tx, y + 1, tz + 1)
+                    append_point(tx + 1, y, tz + 1)
+                    append_point(tx + 1, y + 1, tz + 1)
 
-                if block == 0:  # air
-                    continue
+    for cx, cz in chunks.keys():
+        cxo = cx * 16
+        czo = cz * 16
 
-                block = palette[block]
+        for y in range(256):
+            for z in range(16):
+                for x in range(16):
+                    block = chunks[cx, cz][y, z, x]
 
-                i1 = rpoints.get((x, y, z)) + 1
-                i2 = rpoints.get((x + 1, y, z)) + 1
-                i3 = rpoints.get((x, y + 1, z)) + 1
-                i4 = rpoints.get((x, y, z + 1)) + 1
-                i5 = rpoints.get((x + 1, y + 1, z)) + 1
-                i6 = rpoints.get((x, y + 1, z + 1)) + 1
-                i7 = rpoints.get((x + 1, y, z + 1)) + 1
-                i8 = rpoints.get((x + 1, y + 1, z + 1)) + 1
+                    if block == 0:  # air
+                        continue
 
-                append_face(f"usemtl {block}\nf {i1} {i2} {i7} {i4}")
-                append_face(f"usemtl {block}\nf {i1} {i2} {i5} {i3}")
-                append_face(f"usemtl {block}\nf {i4} {i7} {i8} {i6}")
-                append_face(f"usemtl {block}\nf {i1} {i4} {i6} {i3}")
-                append_face(f"usemtl {block}\nf {i2} {i5} {i8} {i7}")
-                append_face(f"usemtl {block}\nf {i3} {i5} {i8} {i6}")
+                    block = palette[block]
+
+                    tx = x + cxo
+                    tz = z + czo
+
+                    i1 = rpoints.get((tx, y, tz)) + 1
+                    i2 = rpoints.get((tx + 1, y, tz)) + 1
+                    i3 = rpoints.get((tx, y + 1, tz)) + 1
+                    i4 = rpoints.get((tx, y, tz + 1)) + 1
+                    i5 = rpoints.get((tx + 1, y + 1, tz)) + 1
+                    i6 = rpoints.get((tx, y + 1, tz + 1)) + 1
+                    i7 = rpoints.get((tx + 1, y, tz + 1)) + 1
+                    i8 = rpoints.get((tx + 1, y + 1, tz + 1)) + 1
+
+                    append_face(f"usemtl {block}\nf {i1} {i2} {i7} {i4}")
+                    append_face(f"f {i1} {i2} {i5} {i3}")
+                    append_face(f"f {i4} {i7} {i8} {i6}")
+                    append_face(f"f {i1} {i4} {i6} {i3}")
+                    append_face(f"f {i2} {i5} {i8} {i7}")
+                    append_face(f"f {i3} {i5} {i8} {i6}")
 
     file.write("\n".join([f"v {p[0]} {p[1]} {p[2]}" for p in points.values()]) + "\n" + "\n".join(faces.values()))
 
 
 with open("test.obj", "w+") as f:
-    chunk = noisy_chunk()
-    dump_to_obj(f, chunk)
+    noise = SimplexNoise()
+    chunks = {}
+
+    radius = 1
+
+    print("Generating chunks...")
+    start = pf()
+
+    for x in range(-radius, radius):
+        for z in range(-radius, radius):
+            chunks[x, z] = noisy_chunk(noise, x, z)
+
+    print(f"Done generating chunks. ({(pf() - start):02.02f} seconds for {len(chunks)} chunks)")
+
+    print("Dumping to obj file...")
+    start = pf()
+
+    dump_to_obj(f, chunks)
+    print(f"Done dumping. ({(pf() - start):02.02f} seconds for {len(chunks)} chunks)")
