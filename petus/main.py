@@ -148,37 +148,53 @@ def dump_to_obj(file, chunks: dict) -> None:
                     append_point(tx + 1, y + 1, tz + 1)
 
     for cx, cz in chunks.keys():
+        chunk = chunks[cx, cz]
+
         cxo = cx * 16
         czo = cz * 16
+
+        maxes = {}
 
         for y in range(256):
             for z in range(16):
                 for x in range(16):
-                    block = chunks[cx, cz][y, z, x]
-
-                    if block == 0:  # air
+                    if chunk[y, z, x] == 0:
                         continue
 
-                    block = palette[block]
+                    cmax = maxes.get((z, x), -1)
 
-                    tx = x + cxo
-                    tz = z + czo
+                    if y > cmax:
+                        maxes[z, x] = y
 
-                    i1 = rpoints.get((tx, y, tz)) + 1
-                    i2 = rpoints.get((tx + 1, y, tz)) + 1
-                    i3 = rpoints.get((tx, y + 1, tz)) + 1
-                    i4 = rpoints.get((tx, y, tz + 1)) + 1
-                    i5 = rpoints.get((tx + 1, y + 1, tz)) + 1
-                    i6 = rpoints.get((tx, y + 1, tz + 1)) + 1
-                    i7 = rpoints.get((tx + 1, y, tz + 1)) + 1
-                    i8 = rpoints.get((tx + 1, y + 1, tz + 1)) + 1
+        for y in range(256):
+            for z in range(16):
+                for x in range(16):
+                    if y == 0 or maxes[z, x] == y or x in (0, 15) or z in (0, 15):
+                        block = chunk[y, z, x]
 
-                    append_face(f"usemtl {block}\nf {i1} {i2} {i7} {i4}")
-                    append_face(f"f {i1} {i2} {i5} {i3}")
-                    append_face(f"f {i4} {i7} {i8} {i6}")
-                    append_face(f"f {i1} {i4} {i6} {i3}")
-                    append_face(f"f {i2} {i5} {i8} {i7}")
-                    append_face(f"f {i3} {i5} {i8} {i6}")
+                        if block == 0:  # air
+                            continue
+
+                        block = palette[block]
+
+                        tx = x + cxo
+                        tz = z + czo
+
+                        i1 = rpoints.get((tx, y, tz)) + 1
+                        i2 = rpoints.get((tx + 1, y, tz)) + 1
+                        i3 = rpoints.get((tx, y + 1, tz)) + 1
+                        i4 = rpoints.get((tx, y, tz + 1)) + 1
+                        i5 = rpoints.get((tx + 1, y + 1, tz)) + 1
+                        i6 = rpoints.get((tx, y + 1, tz + 1)) + 1
+                        i7 = rpoints.get((tx + 1, y, tz + 1)) + 1
+                        i8 = rpoints.get((tx + 1, y + 1, tz + 1)) + 1
+
+                        append_face(f"usemtl {block}\nf {i1} {i2} {i7} {i4}")
+                        append_face(f"f {i1} {i2} {i5} {i3}")
+                        append_face(f"f {i4} {i7} {i8} {i6}")
+                        append_face(f"f {i1} {i4} {i6} {i3}")
+                        append_face(f"f {i2} {i5} {i8} {i7}")
+                        append_face(f"f {i3} {i5} {i8} {i6}")
 
     file.write("\n".join([f"v {p[0]} {p[1]} {p[2]}" for p in points.values()]) + "\n" + "\n".join(faces.values()))
 
