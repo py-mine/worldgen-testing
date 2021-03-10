@@ -149,12 +149,6 @@ def dump_to_obj(file, chunks: dict) -> None:
                     append_point(tx + 1, y, tz + 1)
                     append_point(tx + 1, y + 1, tz + 1)
 
-    for cx, cz in chunks.keys():
-        chunk = chunks[cx, cz]
-
-        cxo = cx * 16
-        czo = cz * 16
-
         maxes = {}
 
         for y in range(256):
@@ -195,7 +189,7 @@ def dump_to_obj(file, chunks: dict) -> None:
                         append_face(f"f {i2} {i5} {i8} {i7}")
                         append_face(f"f {i3} {i5} {i8} {i6}")
 
-    file.write("\n".join([f"v {p[0]} {p[1]} {p[2]}" for p in points.values()]) + "\n" + "\n".join(faces.values()))
+    file.write("\n".join([f"v {p[0]} {p[1]} {p[2]}" for p in points.values()]) + "\n" + "\n".join(faces.values()) + "\n")
 
 
 with open("test.obj", "w+") as f:
