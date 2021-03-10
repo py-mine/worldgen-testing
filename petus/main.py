@@ -204,7 +204,7 @@ with open("test.obj", "w+") as f:
 
     radius = 1 if len(sys.argv) < 2 else int(sys.argv[1])
 
-    print("Generating chunks...")
+    print(f"Generating {(radius*2)**2} chunks...")
     start = pf()
 
     for x in range(-radius, radius):
