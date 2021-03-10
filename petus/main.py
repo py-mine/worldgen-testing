@@ -38,6 +38,7 @@ def noisy_chunk(noise, chunk_x: int, chunk_z: int) -> numpy.ndarray:
     z_offset = 16 * chunk_z
 
     chunk[0] = palette["bedrock"]
+    height_map = numpy.zeros((16, 16), numpy.float32)
 
     for y in range(4):
         for x in range(16):
