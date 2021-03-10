@@ -1,4 +1,4 @@
-from noise import pnoise1 as perlin  # pip install noise
+from noise.perlin import SimplexNoise # pip install noise
 import numpy
 
 
@@ -24,6 +24,29 @@ def blank_chunk() -> numpy.ndarray:  # used to test dumping to a obj file
     chunk[5:69] = palette["stone"]
     chunk[69:73] = palette["dirt"]
     chunk[73:74] = palette["grass"]
+
+    return chunk
+
+
+def noisy_chunk() -> numpy.ndarray:
+    noise = SimplexNoise()
+    chunk = numpy.zeros((256, 16, 16), numpy.uint64)
+
+    chunk[0] = palette["bedrock"]
+
+    for y in range(1, 256):
+        for z in range(16):
+            for x in range(16):
+                elevation = (noise.noise3(256/(y+1)/5, 16/(z+1)/5, 16/(x+1)/5) + 1) * 128
+
+                if elevation < 5:
+                    chunk[y, z, x] = palette["bedrock"]
+                elif elevation < 45:
+                    chunk[y, z, x] = palette["stone"]
+                elif elevation < 55:
+                    chunk[y, z, x] = palette["dirt"]
+                elif elevation < 56:
+                    chunk[y, z, x] = palette["grass"]
 
     return chunk
 
@@ -90,7 +113,6 @@ def dump_to_obj(file, chunk: numpy.ndarray) -> None:
     file.write("\n".join([f"v {p[0]} {p[1]} {p[2]}" for p in points.values()]) + "\n" + "\n".join(faces.values()))
 
 
-chunk = blank_chunk()
-
 with open("test.obj", "w+") as f:
+    chunk = noisy_chunk()
     dump_to_obj(f, chunk)
