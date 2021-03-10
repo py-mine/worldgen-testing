@@ -28,18 +28,17 @@ def blank_chunk() -> numpy.ndarray:  # used to test dumping to a obj file
     chunk[69:73] = palette["dirt"]
     chunk[73:74] = palette["grass"]
 
-    return chunk
+    return chunk.tolist()
 
 
 def noisy_chunk(noise, chunk_x: int, chunk_z: int) -> numpy.ndarray:
     chunk = numpy.zeros((256, 16, 16), numpy.uint64)
-    height_map = numpy.zeros((16, 16), numpy.float32)
+    height_map = [[0]*16 for _ in range(16)]
 
     x_offset = 16 * chunk_x
     z_offset = 16 * chunk_z
 
     chunk[0] = palette["bedrock"]
-    height_map = numpy.zeros((16, 16), numpy.float32)
 
     for y in range(4):
         for x in range(16):
@@ -70,7 +69,7 @@ def noisy_chunk(noise, chunk_x: int, chunk_z: int) -> numpy.ndarray:
 
             e /= octv1 + octv2 + octv3
 
-            height_map[x, z] = math.pow(e, .5)
+            height_map[x][z] = math.pow(e, .5)
 
     # print(min(height_map.flatten().tolist())*256, max(height_map.flatten().tolist())*256)
 
@@ -80,33 +79,33 @@ def noisy_chunk(noise, chunk_x: int, chunk_z: int) -> numpy.ndarray:
     for y in range(32):
         for x in range(16):
             for z in range(16):
-                y2 = int(height_map[x, z] * 256)
+                y2 = int(height_map[x][z] * 256)
 
                 y2_y_16 = y2 - y - 16
 
-                if y2_y_16 > 0 and chunk[y2_y_16, z, x] != palette["bedrock"]:
+                if y2_y_16 > 0 and chunk[y2_y_16][z][x] != palette["bedrock"]:
                     chunk[y2_y_16, z, x] = palette["stone"]
 
                 y2_y_12 = y2 - y - 12
 
-                if y2_y_12 > 0 and chunk[y2_y_12, z, x] not in ebl1:
+                if y2_y_12 > 0 and chunk[y2_y_12][z][x] not in ebl1:
                     chunk[y2_y_12, z, x] = palette["dirt"]
 
                 y2_y_11 = y2 - y - 11
 
-                if y2_y_11 > 0 and chunk[y2_y_11, z, x] not in ebl2:
+                if y2_y_11 > 0 and chunk[y2_y_11][z][x] not in ebl2:
                     chunk[y2_y_11, z, x] = palette["grass"]
 
-                if 11 > y > 5 and chunk[y, z, x] == palette["grass"]:
-                    chunk[y, z, x] = palette["water"]
+                if 11 > y > 5 and chunk[y][z][x] == palette["grass"]:
+                    chunk[y][z][x] = palette["water"]
 
     for y in range(5, 11):
         for x in range(16):
             for z in range(16):
-                if chunk[y-1, z, x] == palette["water"] and chunk[y, z, x] == palette["air"]:
-                    chunk[y, z, x] = palette["water"]
+                if chunk[y-1, z, x] == palette["water"] and chunk[y][z][x] == palette["air"]:
+                    chunk[y][z][x] = palette["water"]
 
-    return chunk
+    return chunk.tolist()
 
 
 def dump_to_obj(file, chunks: dict) -> None:
@@ -134,7 +133,7 @@ def dump_to_obj(file, chunks: dict) -> None:
         for y in range(256):
             for z in range(16):
                 for x in range(16):
-                    if chunk[y, z, x] == 0:  # air
+                    if chunk[y][z][x] == 0:  # air
                         continue
 
                     tx = x + cxo
@@ -155,26 +154,21 @@ def dump_to_obj(file, chunks: dict) -> None:
         cxo = cx * 16
         czo = cz * 16
 
-        xzr = [0, 15]
-
         maxes = {}
 
         for y in range(256):
             for z in range(16):
                 for x in range(16):
-                    if chunk[y, z, x] == 0:
-                        continue
-
-                    cmax = maxes.get((z, x), -1)
-
-                    if y > cmax:
+                    if chunk[y][z][x] != 0 and y > maxes.get((z, x), -1):
                         maxes[z, x] = y
 
         for y in range(256):
             for z in range(16):
+                prim_cond = y == 0 or z == 0 or z == 15
+
                 for x in range(16):
-                    if y == 0 or maxes[z, x] == y or x in xzr or z in xzr:
-                        block = chunk[y, z, x]
+                    if prim_cond or maxes[z, x] == y or x == 0 or x == 15:
+                        block = chunk[y][z][x]
 
                         if block == 0:  # air
                             continue
@@ -184,14 +178,14 @@ def dump_to_obj(file, chunks: dict) -> None:
                         tx = x + cxo
                         tz = z + czo
 
-                        i1 = rpoints.get((tx, y, tz)) + 1
-                        i2 = rpoints.get((tx + 1, y, tz)) + 1
-                        i3 = rpoints.get((tx, y + 1, tz)) + 1
-                        i4 = rpoints.get((tx, y, tz + 1)) + 1
-                        i5 = rpoints.get((tx + 1, y + 1, tz)) + 1
-                        i6 = rpoints.get((tx, y + 1, tz + 1)) + 1
-                        i7 = rpoints.get((tx + 1, y, tz + 1)) + 1
-                        i8 = rpoints.get((tx + 1, y + 1, tz + 1)) + 1
+                        i1 = rpoints[(tx, y, tz)] + 1
+                        i2 = rpoints[(tx + 1, y, tz)] + 1
+                        i3 = rpoints[(tx, y + 1, tz)] + 1
+                        i4 = rpoints[(tx, y, tz + 1)] + 1
+                        i5 = rpoints[(tx + 1, y + 1, tz)] + 1
+                        i6 = rpoints[(tx, y + 1, tz + 1)] + 1
+                        i7 = rpoints[(tx + 1, y, tz + 1)] + 1
+                        i8 = rpoints[(tx + 1, y + 1, tz + 1)] + 1
 
                         append_face(f"usemtl {block}\nf {i1} {i2} {i7} {i4}")
                         append_face(f"f {i1} {i2} {i5} {i3}")
