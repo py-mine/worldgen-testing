@@ -12,6 +12,7 @@ palette = {
     "stone": 2,
     "dirt": 3,
     "grass": 4,
+    "water": 5
 }
 
 palette = {**palette, **{v: k for k, v in palette.items()}}
@@ -69,7 +70,7 @@ def noisy_chunk(noise, chunk_x: int, chunk_z: int) -> numpy.ndarray:
 
             e /= octv1 + octv2 + octv3
 
-            height_map[x, z] = math.pow(e, .45)
+            height_map[x, z] = math.pow(e, .5)
 
     # print(min(height_map.flatten().tolist())*256, max(height_map.flatten().tolist())*256)
 
@@ -95,6 +96,15 @@ def noisy_chunk(noise, chunk_x: int, chunk_z: int) -> numpy.ndarray:
 
                 if y2_y_11 > 0 and chunk[y2_y_11, z, x] not in ebl2:
                     chunk[y2_y_11, z, x] = palette["grass"]
+
+                if 11 > y > 5 and chunk[y, z, x] == palette["grass"]:
+                    chunk[y, z, x] = palette["water"]
+
+    for y in range(5, 11):
+        for x in range(16):
+            for z in range(16):
+                if chunk[y-1, z, x] == palette["water"] and chunk[y, z, x] == palette["air"]:
+                    chunk[y, z, x] = palette["water"]
 
     return chunk
 
