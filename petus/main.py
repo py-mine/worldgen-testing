@@ -1,5 +1,4 @@
 from noise import pnoise1 as perlin  # pip install noise
-from time import perf_counter as pf
 import numpy
 
 
@@ -30,8 +29,6 @@ def blank_chunk() -> numpy.ndarray:  # used to test dumping to a obj file
 
 
 def dump_to_obj(file, chunk: numpy.ndarray) -> None:
-    start = pf()
-
     points = {}
     rpoints = {}
     faces = {}
@@ -52,11 +49,6 @@ def dump_to_obj(file, chunk: numpy.ndarray) -> None:
     for y in range(256):
         for z in range(16):
             for x in range(16):
-                i = (y + 1) * (z + 1) * (x + 1)
-
-                if i % 128 == 0:
-                    print(f"{i:05.0f}/{total_len} (1/2)\r", end="")
-
                 if chunk[y, z, x] == 0:  # air
                     continue
 
@@ -69,16 +61,9 @@ def dump_to_obj(file, chunk: numpy.ndarray) -> None:
                 append_point(x + 1, y, z + 1)
                 append_point(x + 1, y + 1, z + 1)
 
-    print()
-
     for y in range(256):
         for z in range(16):
             for x in range(16):
-                i = (y + 1) * (z + 1) * (x + 1)
-
-                if i % 128 == 0:
-                    print(f"{i:05.0f}/{total_len} (2/2)\r", end="")
-
                 block = chunk[y, z, x]
 
                 if block == 0:  # air
@@ -102,16 +87,7 @@ def dump_to_obj(file, chunk: numpy.ndarray) -> None:
                 append_face(f"usemtl {block}\nf {i2} {i5} {i8} {i7}")
                 append_face(f"usemtl {block}\nf {i3} {i5} {i8} {i6}")
 
-    print()
-
-    file.write(
-        "mtllib test.mtl\n"
-        + "\n".join([f"v {p[0]} {p[1]} {p[2]}" for p in points.values()])
-        + "\n"
-        + "\n".join(faces.values())
-    )
-
-    print(f"Completed in {pf() - start:02.2f} seconds.")
+    file.write("\n".join([f"v {p[0]} {p[1]} {p[2]}" for p in points.values()]) + "\n" + "\n".join(faces.values()))
 
 
 chunk = blank_chunk()
