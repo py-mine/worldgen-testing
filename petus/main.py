@@ -52,7 +52,7 @@ def noisy_chunk(noise, chunk_x: int, chunk_z: int) -> list:
                 elif n > 0:
                     chunk[y+1][z][x] = palette["bedrock"]
 
-    freq = 16
+    freq = 26
     octv1 = 2
     octv2 = 4
     octv3 = 12
@@ -77,33 +77,29 @@ def noisy_chunk(noise, chunk_x: int, chunk_z: int) -> list:
     ebl1 = (palette["bedrock"], palette["stone"])
     ebl2 = (palette["bedrock"], palette["stone"], palette["dirt"])
 
+    y_offset = 20
+
     for y in range(32):
         for x in range(16):
             for z in range(16):
-                y2 = int(height_map[x][z] * 256)
+                y2 = int(height_map[x][z] * 256) + 10
 
-                y2_y_16 = y2 - y - 16
+                y2_y_6 = y2 - y - y_offset - 6
 
-                if y2_y_16 > 0 and chunk[y2_y_16][z][x] != palette["bedrock"]:
-                    chunk[y2_y_16][z][x] = palette["stone"]
+                if y2_y_6 > 0 and chunk[y2_y_6][z][x] != palette["bedrock"]:
+                    chunk[y2_y_6][z][x] = palette["stone"]
 
-                y2_y_12 = y2 - y - 12
+                y2_y_2 = y2 - y - y_offset - 2
 
-                if y2_y_12 > 0 and chunk[y2_y_12][z][x] not in ebl1:
-                    chunk[y2_y_12][z][x] = palette["dirt"]
+                if y2_y_2 > 0 and chunk[y2_y_2][z][x] not in ebl1:
+                    chunk[y2_y_2][z][x] = palette["dirt"]
 
-                y2_y_11 = y2 - y - 11
+                y2_y_1 = y2 - y - y_offset - 1
 
-                if y2_y_11 > 0 and chunk[y2_y_11][z][x] not in ebl2:
-                    chunk[y2_y_11][z][x] = palette["grass"]
+                if y2_y_1 > 0 and chunk[y2_y_1][z][x] not in ebl2:
+                    chunk[y2_y_1][z][x] = palette["grass"]
 
-                if 11 > y > 5 and chunk[y][z][x] == palette["grass"]:
-                    chunk[y][z][x] = palette["water"]
-
-    for y in range(5, 11):
-        for x in range(16):
-            for z in range(16):
-                if chunk[y-1][z][x] == palette["water"] and chunk[y][z][x] == palette["air"]:
+                if 12 > y and chunk[y][z][x] == palette["air"]:
                     chunk[y][z][x] = palette["water"]
 
     return chunk
