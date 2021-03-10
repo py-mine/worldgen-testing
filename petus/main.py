@@ -2,6 +2,7 @@ from noise.perlin import SimplexNoise  # pip install noise
 from time import perf_counter as pf
 import numpy
 import math
+import sys
 
 
 # here, a "chunk" refers to a 16x256x16 array of block states
@@ -201,7 +202,7 @@ with open("test.obj", "w+") as f:
     noise = SimplexNoise()
     chunks = {}
 
-    radius = 1
+    radius = 1 if len(sys.argv) < 2 else int(sys.argv[1])
 
     print("Generating chunks...")
     start = pf()
