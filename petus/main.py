@@ -19,10 +19,9 @@ palette = {
 palette = {**palette, **{v: k for k, v in palette.items()}}
 
 
-def blank_chunk() -> numpy.ndarray:  # used to test dumping to a obj file
+def blank_chunk() -> list:  # used to test dumping to a obj file
     #                       y   z   x
-    chunk = numpy.ndarray((256, 16, 16), numpy.uint32)  # kinda how chunks are stored in pymine
-    chunk.fill(0)
+    chunk = numpy.zeros((256, 16, 16), numpy.uint64)  # kinda how chunks are stored in pymine
 
     chunk[0:5] = palette["bedrock"]
     chunk[5:69] = palette["stone"]
@@ -32,7 +31,7 @@ def blank_chunk() -> numpy.ndarray:  # used to test dumping to a obj file
     return chunk.tolist()
 
 
-def noisy_chunk(noise, chunk_x: int, chunk_z: int) -> numpy.ndarray:
+def noisy_chunk(noise, chunk_x: int, chunk_z: int) -> list:
     chunk = numpy.zeros((256, 16, 16), numpy.uint64)
     height_map = [[0]*16 for _ in range(16)]
 
@@ -40,17 +39,18 @@ def noisy_chunk(noise, chunk_x: int, chunk_z: int) -> numpy.ndarray:
     z_offset = 16 * chunk_z
 
     chunk[0] = palette["bedrock"]
+    chunk = chunk.tolist()
 
     for y in range(4):
         for x in range(16):
             for z in range(16):
                 n = noise.noise3(x, y, z)
 
-                if y < 2:
+                if y < 2:  # I do this to get more of a gradient between the different layers of bedrock
                     if n >= 0:
-                        chunk[y+1, z, x] = palette["bedrock"]
+                        chunk[y+1][z][x] = palette["bedrock"]
                 elif n > 0:
-                    chunk[y+1, z, x] = palette["bedrock"]
+                    chunk[y+1][z][x] = palette["bedrock"]
 
     freq = 16
     octv1 = 2
@@ -85,17 +85,17 @@ def noisy_chunk(noise, chunk_x: int, chunk_z: int) -> numpy.ndarray:
                 y2_y_16 = y2 - y - 16
 
                 if y2_y_16 > 0 and chunk[y2_y_16][z][x] != palette["bedrock"]:
-                    chunk[y2_y_16, z, x] = palette["stone"]
+                    chunk[y2_y_16][z][x] = palette["stone"]
 
                 y2_y_12 = y2 - y - 12
 
                 if y2_y_12 > 0 and chunk[y2_y_12][z][x] not in ebl1:
-                    chunk[y2_y_12, z, x] = palette["dirt"]
+                    chunk[y2_y_12][z][x] = palette["dirt"]
 
                 y2_y_11 = y2 - y - 11
 
                 if y2_y_11 > 0 and chunk[y2_y_11][z][x] not in ebl2:
-                    chunk[y2_y_11, z, x] = palette["grass"]
+                    chunk[y2_y_11][z][x] = palette["grass"]
 
                 if 11 > y > 5 and chunk[y][z][x] == palette["grass"]:
                     chunk[y][z][x] = palette["water"]
@@ -103,10 +103,10 @@ def noisy_chunk(noise, chunk_x: int, chunk_z: int) -> numpy.ndarray:
     for y in range(5, 11):
         for x in range(16):
             for z in range(16):
-                if chunk[y-1, z, x] == palette["water"] and chunk[y][z][x] == palette["air"]:
+                if chunk[y-1][z][x] == palette["water"] and chunk[y][z][x] == palette["air"]:
                     chunk[y][z][x] = palette["water"]
 
-    return chunk.tolist()
+    return chunk
 
 
 def dump_to_obj(file, chunks: dict) -> None:
