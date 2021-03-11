@@ -186,45 +186,61 @@ def dump_to_obj(file, chunks: dict) -> None:
                     append_point(tx + 1, y, tz + 1)
                     append_point(tx + 1, y + 1, tz + 1)
 
-        maxes = {}
+        # maxes = {}
+        #
+        # for y in range(256):
+        #     for z in range(16):
+        #         for x in range(16):
+        #             if chunk[y][z][x] != 0 and y > maxes.get((z, x), -1):
+        #                 maxes[z, x] = y
 
         for y in range(256):
             for z in range(16):
                 for x in range(16):
-                    if chunk[y][z][x] != 0 and y > maxes.get((z, x), -1):
-                        maxes[z, x] = y
+                    block = chunk[y][z][x]
 
-        for y in range(256):
-            for z in range(16):
-                prim_cond = y == 0 or z == 0 or z == 15 or True
+                    if chunk[y][z][x] == 0:  # air
+                        continue
 
-                for x in range(16):
-                    if prim_cond or maxes[z, x] == y or x == 0 or x == 15:
-                        block = chunk[y][z][x]
+                    visible = False
 
-                        if block == 0:  # air
-                            continue
+                    if z == 0 or x == 0:
+                        visible = True
+                    else:
+                        for y2 in (y-1, y+1):
+                            for z2 in (z-1, z+1):
+                                for x2 in (x-1, x+1):
+                                    try:
+                                        if chunk[y2][z2][x2] == 0:
+                                            visible = True
+                                            break
+                                    except IndexError:
+                                        visible = True
+                                        break
 
-                        block = palette[block]
+                    if not visible:
+                        continue
 
-                        tx = x + cxo
-                        tz = z + czo
+                    block = palette[block]
 
-                        i1 = rpoints[(tx, y, tz)] + 1
-                        i2 = rpoints[(tx + 1, y, tz)] + 1
-                        i3 = rpoints[(tx, y + 1, tz)] + 1
-                        i4 = rpoints[(tx, y, tz + 1)] + 1
-                        i5 = rpoints[(tx + 1, y + 1, tz)] + 1
-                        i6 = rpoints[(tx, y + 1, tz + 1)] + 1
-                        i7 = rpoints[(tx + 1, y, tz + 1)] + 1
-                        i8 = rpoints[(tx + 1, y + 1, tz + 1)] + 1
+                    tx = x + cxo
+                    tz = z + czo
 
-                        append_face(f"usemtl {block}\nf {i1} {i2} {i7} {i4}")
-                        append_face(f"f {i1} {i2} {i5} {i3}")
-                        append_face(f"f {i4} {i7} {i8} {i6}")
-                        append_face(f"f {i1} {i4} {i6} {i3}")
-                        append_face(f"f {i2} {i5} {i8} {i7}")
-                        append_face(f"f {i3} {i5} {i8} {i6}")
+                    i1 = rpoints[(tx, y, tz)] + 1
+                    i2 = rpoints[(tx + 1, y, tz)] + 1
+                    i3 = rpoints[(tx, y + 1, tz)] + 1
+                    i4 = rpoints[(tx, y, tz + 1)] + 1
+                    i5 = rpoints[(tx + 1, y + 1, tz)] + 1
+                    i6 = rpoints[(tx, y + 1, tz + 1)] + 1
+                    i7 = rpoints[(tx + 1, y, tz + 1)] + 1
+                    i8 = rpoints[(tx + 1, y + 1, tz + 1)] + 1
+
+                    append_face(f"usemtl {block}\nf {i1} {i2} {i7} {i4}")
+                    append_face(f"f {i1} {i2} {i5} {i3}")
+                    append_face(f"f {i4} {i7} {i8} {i6}")
+                    append_face(f"f {i1} {i4} {i6} {i3}")
+                    append_face(f"f {i2} {i5} {i8} {i7}")
+                    append_face(f"f {i3} {i5} {i8} {i6}")
 
     file.write("\n".join([f"v {p[0]} {p[1]} {p[2]}" for p in points.values()]) + "\n" + "\n".join(faces.values()) + "\n")
 
