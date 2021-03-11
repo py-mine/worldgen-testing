@@ -54,7 +54,7 @@ def noisy_chunk(noise, chunk_x: int, chunk_z: int) -> list:
 
     frequency = 26
     octaves = [3, 7, 12]
-    height_factor = 72
+    height_factor = 72  # how high the surface is
     redistrib = .035 * (256/height_factor)
 
     octave_inverted_sum = sum([1 / o for o in octaves])
