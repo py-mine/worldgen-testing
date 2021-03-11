@@ -79,16 +79,17 @@ def noisy_chunk(noise, chunk_x: int, chunk_z: int) -> list:
             e = int(e)
 
             for y in range(e):
-                if y < (height_factor-14):
+                if y < (height_factor-14):  # draw grass or water depending on height
                     chunk[y+9][z][x] = palette["water"]
                 else:
                     chunk[y+9][z][x] = palette["grass"]
 
-                for i in range(9):
+                for i in range(9):  # draw dirt
                     chunk[y+i][z][x] = palette["dirt"]
 
-                chunk[y][z][x] = palette["stone"]
+                chunk[y][z][x] = palette["stone"]  # draw stone
 
+    # generate the bedrock layers
     for y in range(5):
         for x in range(16):
             for z in range(16):
