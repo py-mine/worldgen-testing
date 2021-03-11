@@ -41,66 +41,54 @@ def noisy_chunk(noise, chunk_x: int, chunk_z: int) -> list:
     chunk[0] = palette["bedrock"]
     chunk = chunk.tolist()
 
-    for y in range(4):
+    for y in range(5):
         for x in range(16):
             for z in range(16):
                 n = noise.noise3(x, y, z)
 
-                if y < 2:  # I do this to get more of a gradient between the different layers of bedrock
+                if y < 3:  # I do this to get more of a gradient between the different layers of bedrock
                     if n >= 0:
                         chunk[y+1][z][x] = palette["bedrock"]
                 elif n > 0:
                     chunk[y+1][z][x] = palette["bedrock"]
 
-    freq = 26
-    octv1 = 2
-    octv2 = 4
-    octv3 = 12
+    frequency = 26
+    octaves = [3, 7, 12]
+    height_factor = 72
+    redistrib = .035 * (256/height_factor)
 
-    for x in range(16):
-        for z in range(16):
-            xx = (x + x_offset) / 16 / freq
-            zz = (z + z_offset) / 16 / freq
+    octave_inverted_sum = sum([1 / o for o in octaves])
 
-            e = (
-                (noise.noise2(octv1 * xx, octv1 * zz) + 1) / 2 / octv1
-                + (noise.noise2(octv2 * xx, octv2 * zz) + 1) / 2 / octv2
-                + (noise.noise2(octv3 * xx, octv3 * zz) + 1) / 2 / octv3
-            )
-
-            e /= octv1 + octv2 + octv3
-
-            height_map[x][z] = math.pow(e, .5)
-
-    # print(min(height_map.flatten().tolist())*256, max(height_map.flatten().tolist())*256)
-
-    ebl1 = (palette["bedrock"], palette["stone"])
-    ebl2 = (palette["bedrock"], palette["stone"], palette["dirt"])
-
-    y_offset = 20
-
-    for y in range(32):
+    for z in range(16):
         for x in range(16):
-            for z in range(16):
-                y2 = int(height_map[x][z] * 256) + 10
+            nx = (x + x_offset) / 16 / frequency
+            nz = (z + z_offset) / 16 / frequency
 
-                y2_y_6 = y2 - y - y_offset - 6
+            # octaves
+            e = sum([(noise.noise2(o * nx, o * nz) / o) for o in octaves])
+            e /= octave_inverted_sum
 
-                if y2_y_6 > 0 and chunk[y2_y_6][z][x] != palette["bedrock"]:
-                    chunk[y2_y_6][z][x] = palette["stone"]
+            # account for noise2() range (-1 to 1)
+            e += 1
+            e /= 2
 
-                y2_y_2 = y2 - y - y_offset - 2
+            # redistribution
+            e **= redistrib
 
-                if y2_y_2 > 0 and chunk[y2_y_2][z][x] not in ebl1:
-                    chunk[y2_y_2][z][x] = palette["dirt"]
+            # world is 256 blocks high but fuck it
+            e *= height_factor
 
-                y2_y_1 = y2 - y - y_offset - 1
+            # block coords can't be floats
+            e = int(e)
 
-                if y2_y_1 > 0 and chunk[y2_y_1][z][x] not in ebl2:
-                    chunk[y2_y_1][z][x] = palette["grass"]
+            for y in range(e):
+                if chunk[y][z][x] != 1:
+                    chunk[y+9][z][x] = palette["grass"]
 
-                if 12 > y and chunk[y][z][x] == palette["air"]:
-                    chunk[y][z][x] = palette["water"]
+                    for i in range(9):
+                        chunk[y+i][z][x] = palette["dirt"]
+
+                    chunk[y][z][x] = palette["stone"]
 
     return chunk
 
