@@ -129,8 +129,8 @@ def noisy_chunk(noise, randomness, chunk_x: int, chunk_z: int) -> list:
         noise_a = noise.noise3d(x + x_offset, y, z + z_offset)
         noise_b = noise.noise3d((x + x_offset)**2, y * y, (z + z_offset)**2)
 
-        pitch = map_range(noise_a, 0, 1, -360, 360)
-        yaw = map_range(noise_b, 0, 1, -360, 360)
+        pitch = map_range(noise_a, -1, 1, -360, 360)
+        yaw = map_range(noise_b, -1, 1, -360, 360)
 
         y2 = math.sin(yaw) * math.cos(pitch)
         z2 = math.sin(pitch)
