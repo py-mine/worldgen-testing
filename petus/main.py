@@ -32,14 +32,11 @@ def blank_chunk() -> list:  # used to test dumping to a obj file
 
 
 def noisy_chunk(noise, chunk_x: int, chunk_z: int) -> list:
-    chunk = numpy.zeros((256, 16, 16), numpy.uint64)
+    chunk = [[[0]*16 for _ in range(16)] for _ in range(256)]
     height_map = [[0]*16 for _ in range(16)]
 
     x_offset = 16 * chunk_x
     z_offset = 16 * chunk_z
-
-    chunk[0] = palette["bedrock"]
-    chunk = chunk.tolist()
 
     for y in range(5):
         for x in range(16):
@@ -82,17 +79,29 @@ def noisy_chunk(noise, chunk_x: int, chunk_z: int) -> list:
             e = int(e)
 
             for y in range(e):
-                if chunk[y][z][x] != 1:
+                if y < (height_factor-14):
+                    chunk[y+9][z][x] = palette["water"]
+                else:
+                    chunk[y+9][z][x] = palette["grass"]
 
-                    if y < 58:
-                        chunk[y+9][z][x] = palette["water"]
-                    else:
-                        chunk[y+9][z][x] = palette["grass"]
+                for i in range(9):
+                    chunk[y+i][z][x] = palette["dirt"]
 
-                    for i in range(9):
-                        chunk[y+i][z][x] = palette["dirt"]
+                chunk[y][z][x] = palette["stone"]
 
-                    chunk[y][z][x] = palette["stone"]
+    for y in range(5):
+        for x in range(16):
+            for z in range(16):
+                if y == 0:
+                    chunk[y][z][x] = palette["bedrock"]
+                else:
+                    n = noise.noise3(x, y, z)
+
+                    # I do this to get more of a gradient between the different layers of bedrock
+                    if y < 2 and n >= 0:
+                        chunk[y][z][x] = palette["bedrock"]
+                    elif n > 0:
+                        chunk[y][z][x] = palette["bedrock"]
 
     return chunk
 
