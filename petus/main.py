@@ -1,5 +1,6 @@
-from noise.perlin import SimplexNoise  # pip install noise
+from opensimplex import OpenSimplex  # pip install opensimplex
 from time import perf_counter as pf
+from random import Random
 import numpy
 import math
 import sys
@@ -7,14 +8,7 @@ import sys
 
 # here, a "chunk" refers to a 256x16x16 array of block states
 
-palette = {
-    "air": 0,
-    "bedrock": 1,
-    "stone": 2,
-    "dirt": 3,
-    "grass": 4,
-    "water": 5
-}
+palette = {"air": 0, "bedrock": 1, "stone": 2, "dirt": 3, "grass": 4, "water": 5}
 
 palette = {**palette, **{v: k for k, v in palette.items()}}
 
@@ -31,9 +25,28 @@ def blank_chunk() -> list:  # used to test dumping to a obj file
     return chunk.tolist()
 
 
-def noisy_chunk(noise, chunk_x: int, chunk_z: int) -> list:
-    chunk = [[[0]*16 for _ in range(16)] for _ in range(256)]
-    height_map = [[0]*16 for _ in range(16)]
+def map_range(x: int, in_min: int, in_max: int, out_min: int, out_max: int) -> float:
+    return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min
+
+
+def distance(y1: int, z1: int, x1: int, y2: int, z2: int, x2: int) -> float:
+    return math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2 + (z2 - z1) ** 2)
+
+
+def remove_sphere(chunk: list, y: int, z: int, x: int, radius: int) -> None:
+    for y2 in range(y - radius, y + radius):
+        for z2 in range(z - radius, z + radius):
+            for x2 in range(x - radius, x + radius):
+                if distance(y, z, x, y2, z2, x2) < radius:
+                    try:
+                        chunk[y2][z2][x2] = 0  # air
+                    except IndexError:
+                        pass
+
+
+def noisy_chunk(noise, randomness, chunk_x: int, chunk_z: int) -> list:
+    chunk = [[[0] * 16 for _ in range(16)] for _ in range(256)]
+    height_map = [[0] * 16 for _ in range(16)]
 
     x_offset = 16 * chunk_x
     z_offset = 16 * chunk_z
@@ -41,18 +54,19 @@ def noisy_chunk(noise, chunk_x: int, chunk_z: int) -> list:
     for y in range(5):
         for x in range(16):
             for z in range(16):
-                n = noise.noise3(x, y, z)
+                n = noise.noise3d(x, y, z)
 
                 if y < 3:  # I do this to get more of a gradient between the different layers of bedrock
                     if n >= 0:
-                        chunk[y+1][z][x] = palette["bedrock"]
+                        chunk[y + 1][z][x] = palette["bedrock"]
                 elif n > 0:
-                    chunk[y+1][z][x] = palette["bedrock"]
+                    chunk[y + 1][z][x] = palette["bedrock"]
 
-    frequency = 26
+    frequency = 20
     octaves = [3, 7, 12]
     height_factor = 72  # how high the surface is
-    redistrib = .035 * (256/height_factor)
+    # redistrib = 0.035 * (256 / height_factor)
+    redistrib = 0.05 * (256 / height_factor)
 
     octave_inverted_sum = sum([1 / o for o in octaves])
 
@@ -62,10 +76,10 @@ def noisy_chunk(noise, chunk_x: int, chunk_z: int) -> list:
             nz = (z + z_offset) / 16 / frequency
 
             # octaves
-            e = sum([(noise.noise2(o * nx, o * nz) / o) for o in octaves])
+            e = sum([(noise.noise2d(o * nx, o * nz) / o) for o in octaves])
             e /= octave_inverted_sum
 
-            # account for noise2() range (-1 to 1)
+            # account for noise2d() range (-1 to 1)
             e += 1
             e /= 2
 
@@ -79,30 +93,55 @@ def noisy_chunk(noise, chunk_x: int, chunk_z: int) -> list:
             e = int(e)
 
             for y in range(e):
-                if y < (height_factor-14):  # draw grass or water depending on height
-                    chunk[y+9][z][x] = palette["water"]
+                if y < (height_factor - 14):  # draw grass or water depending on height
+                    chunk[y + 9][z][x] = palette["water"]
                 else:
-                    chunk[y+9][z][x] = palette["grass"]
+                    chunk[y + 9][z][x] = palette["grass"]
 
                 for i in range(9):  # draw dirt
-                    chunk[y+i][z][x] = palette["dirt"]
+                    chunk[y + i][z][x] = palette["dirt"]
 
                 chunk[y][z][x] = palette["stone"]  # draw stone
 
     # generate the bedrock layers
     for y in range(5):
-        for x in range(16):
-            for z in range(16):
+        for z in range(16):
+            for x in range(16):
                 if y == 0:
                     chunk[y][z][x] = palette["bedrock"]
                 else:
-                    n = noise.noise3(x, y, z)
+                    n = noise.noise3d(x, y, z)
 
                     # I do this to get more of a gradient between the different layers of bedrock
                     if y < 2 and n >= 0:
                         chunk[y][z][x] = palette["bedrock"]
                     elif n > 0:
                         chunk[y][z][x] = palette["bedrock"]
+
+    y = randomness.randint(4, height_factor - 10)
+    z = randomness.randint(0, 16)
+    x = randomness.randint(0, 16)
+
+    segment_len = 3
+    segments = 20
+
+    for s in range(segments):
+        noise_a = noise.noise3d(x + x_offset, y, z + z_offset)
+        noise_b = noise.noise3d((x + x_offset)**2, y * y, (z + z_offset)**2)
+
+        pitch = map_range(noise_a, 0, 1, -360, 360)
+        yaw = map_range(noise_b, 0, 1, -360, 360)
+
+        y2 = math.sin(yaw) * math.cos(pitch)
+        z2 = math.sin(pitch)
+        x2 = math.cos(yaw) * math.cos(pitch)
+
+        for p in range(segment_len):
+            remove_sphere(chunk, int(y), int(z), int(x), 4)
+
+            y += y2
+            z += z2
+            x += x2
 
     return chunk
 
@@ -157,7 +196,7 @@ def dump_to_obj(file, chunks: dict) -> None:
 
         for y in range(256):
             for z in range(16):
-                prim_cond = y == 0 or z == 0 or z == 15
+                prim_cond = y == 0 or z == 0 or z == 15 or True
 
                 for x in range(16):
                     if prim_cond or maxes[z, x] == y or x == 0 or x == 15:
@@ -191,7 +230,9 @@ def dump_to_obj(file, chunks: dict) -> None:
 
 
 with open("test.obj", "w+") as f:
-    noise = SimplexNoise()
+    seed = 1234567890
+    randomness = Random(seed)
+    noise = OpenSimplex(seed=seed)
     chunks = {}
 
     radius = 1 if len(sys.argv) < 2 else int(sys.argv[1])
@@ -201,7 +242,7 @@ with open("test.obj", "w+") as f:
 
     for x in range(-radius, radius):
         for z in range(-radius, radius):
-            chunks[x, z] = noisy_chunk(noise, x, z)
+            chunks[x, z] = noisy_chunk(noise, randomness, x, z)
 
     print(f"Done generating chunks. ({(pf() - start):02.02f} seconds for {len(chunks)} chunks)")
 
