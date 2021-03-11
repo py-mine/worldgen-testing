@@ -118,12 +118,12 @@ def noisy_chunk(noise, randomness, chunk_x: int, chunk_z: int) -> list:
                     elif n > 0:
                         chunk[y][z][x] = palette["bedrock"]
 
-    y = randomness.randint(4, height_factor - 10)
+    y = randomness.randint(9, height_factor - 16)
     z = randomness.randint(0, 16)
     x = randomness.randint(0, 16)
 
     segment_len = 3
-    segments = 20
+    segments = 10
 
     for s in range(segments):
         noise_a = noise.noise3d(x + x_offset, y, z + z_offset)
@@ -230,7 +230,7 @@ def dump_to_obj(file, chunks: dict) -> None:
 
 
 with open("test.obj", "w+") as f:
-    seed = 1234567890
+    seed = 1281134870109837483
     randomness = Random(seed)
     noise = OpenSimplex(seed=seed)
     chunks = {}
