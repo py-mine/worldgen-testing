@@ -83,7 +83,11 @@ def noisy_chunk(noise, chunk_x: int, chunk_z: int) -> list:
 
             for y in range(e):
                 if chunk[y][z][x] != 1:
-                    chunk[y+9][z][x] = palette["grass"]
+
+                    if y < 58:
+                        chunk[y+9][z][x] = palette["water"]
+                    else:
+                        chunk[y+9][z][x] = palette["grass"]
 
                     for i in range(9):
                         chunk[y+i][z][x] = palette["dirt"]
