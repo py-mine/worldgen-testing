@@ -46,7 +46,7 @@ def remove_sphere(chunks: dict, y: int, z: int, x: int, radius: int) -> None:
                     cz = math.floor(z2 / 16)
 
                     try:
-                        if chunks[cx, cz][y2][z2 % 16][x2 % 16] == 4:
+                        if chunks[cx, cz][y2][z2 % 16][x2 % 16] == 2:
                             chunks[cx, cz][y2][z2 % 16][x2 % 16] = 0  # air
                     except KeyError:
                         pass
