@@ -3,7 +3,7 @@ import streams
 import tables
 
 type
-  BreakOutOfLoops = object of Exception
+  BreakOutOfLoops = object of CatchableError
 
 let blockToId = {
   "air": 0,
