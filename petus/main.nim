@@ -40,7 +40,7 @@ proc newBlankChunk(): array[0..256, array[0..16, array[0..16, int]]] =
           else:
             result[y][z][x] = blockToId["air"]
 
-proc dumpToObjFile(file: FileStream, chunk: array[0..256, array[0..16, array[0..16, int]]]) =
+proc dumpToObjFile(file: FileStream, chunk: array[0..256, array[0..16, array[0..16, int]]]) {.discardable.} =
   var points: seq[tuple[x: int, y: int, z: int]]
   var faces: seq[string]
 
@@ -132,3 +132,8 @@ proc dumpToObjFile(file: FileStream, chunk: array[0..256, array[0..16, array[0..
 
   for face in faces:
     file.writeLine(face)
+
+
+var file = newFileStream("test.obj", fmWrite)
+var chunk = newBlankChunk()
+dumpToObjFile(file, chunk)
