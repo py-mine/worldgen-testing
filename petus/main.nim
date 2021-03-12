@@ -1,6 +1,7 @@
 import streams
 import hashes
 import tables
+import sugar
 
 type
   BreakOutOfLoops = object of CatchableError
@@ -15,14 +16,8 @@ let blockToId = {
   "water": 5
 }.newTable
 
-let idToBlock = {
-  0: "air",
-  1: "bedrock",
-  2: "stone",
-  3: "dirf",
-  4: "grass",
-  5: "water"
-}.newTable
+let idToBlock = collect(initTable(6)):
+    for key, value in blockToId : {value: key}
 
 proc newBlankChunk(): array[0..256, array[0..16, array[0..16, int]]] =
   for y in countup(0, 255):
