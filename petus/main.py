@@ -53,8 +53,6 @@ def remove_sphere(chunks: dict, y: int, z: int, x: int, radius: int) -> None:
                     except Exception as e:
                         print(e)
 
-    return chunks
-
 
 def noisy_chunk(noise, randomness, chunk_x: int, chunk_z: int) -> list:
     chunk = [[[0] * 16 for _ in range(16)] for _ in range(256)]
@@ -130,32 +128,56 @@ def noisy_chunk(noise, randomness, chunk_x: int, chunk_z: int) -> list:
                     elif n > 0:
                         chunk[y][z][x] = palette["bedrock"]
 
-    y = randomness.randint(9, height_factor - 16)
-    z = randomness.randint(0, 16)
-    x = randomness.randint(0, 16)
+    return chunk
+
+
+def wormy_bois(chunks, randomness, noise):
 
     segment_len = 3
-    segments = 10
+    segments = 25
+    worms = []
 
-    for s in range(segments):
-        noise_a = noise.noise3d(x + x_offset, y, z + z_offset)
-        noise_b = noise.noise3d((x + x_offset) ** 2, y * y, (z + z_offset) ** 2)
+    for cx, cz in chunks.keys():
+        chunk = chunks[cx, cz]
+        x_offset = cx * 16
+        z_offset = cz * 16
+        for y in range(5, 72):
+            for z in range(16):
+                for x in range(16):
+                    if noise.noise3d(x + x_offset, y, z + z_offset) > 0.875:
+                        worms += [(x + x_offset, y, z + z_offset)]
+        # if noise.noise2d(x_offset*4, z_offset*4) > 0.875:
+        #     max = (0, 0, 0, 0)
+        #     for y in range(5, 128):
+        #         for z in range(16):
+        #             for x in range(16):
+        #                 n = noise.noise3d(x+x_offset, y, z+z_offset)
+        #                 if n > max[3]:
+        #                     max = (x, y, z, n)
+        #     worms += [(max[0]+x_offset, max[1], max[2]+z_offset)]
 
-        pitch = map_range(noise_a, 0, 1, -360, 360)
-        yaw = map_range(noise_b, 0, 1, -360, 360)
+    for worm in worms:
+        x, y, z = worm
 
-        y2 = math.sin(yaw) * math.cos(pitch)
-        z2 = math.sin(pitch)
-        x2 = math.cos(yaw) * math.cos(pitch)
+        for s in range(segments):
+            noise_a = noise.noise3d(x, y, z)
+            noise_b = noise.noise3d(x * x, y * y, z * z)
 
-        for p in range(segment_len):
-            remove_sphere(chunk, int(y), int(z), int(x), 4)
+            pitch = map_range(noise_a, -1, 1, -360, 360)
+            yaw = map_range(noise_b, -1, 1, -360, 360)
 
-            y += y2
-            z += z2
-            x += x2
+            y2 = math.sin(yaw) * math.cos(pitch)
+            z2 = math.sin(pitch)
+            x2 = math.cos(yaw) * math.cos(pitch)
 
-    return chunk
+            for p in range(segment_len):
+                remove_sphere(chunks, int(y), int(z), int(x), 4)
+
+                y += y2
+                z += z2
+                x += x2
+
+    return chunks, len(worms)
 
 
 def dump_to_obj(file, chunks: dict) -> None:
@@ -211,7 +233,7 @@ def dump_to_obj(file, chunks: dict) -> None:
                 for x in range(16):
                     block = chunk[y][z][x]
 
-                    if chunk[y][z][x] == 0:  # air
+                    if block == 0:  # air
                         continue
 
                     visible = False
@@ -273,6 +295,13 @@ with open("test.obj", "w+") as f:
             chunks[x, z] = noisy_chunk(noise, randomness, x, z)
 
     print(f"Done generating chunks. ({(pf() - start):02.02f} seconds for {len(chunks)} chunks)")
+
+    print("Activating wormy bois...")
+    start = pf()
+
+    chunks, n = wormy_bois(chunks, randomness, noise)
+
+    print(f"Wormy bois finished. ({(pf() - start):02.02f} seconds for {n} wormy bois)")
 
     print("Dumping to obj file...")
     start = pf()

@@ -158,6 +158,7 @@ def wormy_bois(chunks, randomness, noise):
 
     for worm in worms:
         x, y, z = worm
+
         for s in range(segments):
             noise_a = noise.noise3d(x, y, z)
             noise_b = noise.noise3d(x * x, y * y, z * z)
@@ -175,6 +176,7 @@ def wormy_bois(chunks, randomness, noise):
                 y += y2
                 z += z2
                 x += x2
+
     return chunks, len(worms)
 
 
@@ -231,7 +233,7 @@ def dump_to_obj(file, chunks: dict) -> None:
                 for x in range(16):
                     block = chunk[y][z][x]
 
-                    if chunk[y][z][x] == 0:  # air
+                    if block == 0:  # air
                         continue
 
                     visible = False
