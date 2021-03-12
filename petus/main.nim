@@ -1,16 +1,31 @@
+import strutils
 import streams
 import hashes
 import tables
+import times
+import math
+import os
+
+template benchmark(benchmarkName: string, code: untyped) =
+  block:
+    let t0 = epochTime()
+    code
+    let elapsed = epochTime() - t0
+    let elapsedStr = elapsed.formatFloat(format = ffDecimal, precision = 3)
+    echo "Elapsed Time [", benchmarkName, "] ", elapsedStr, "seconds"
 
 type
   BreakOutOfLoops = object of CatchableError
+
   Point = tuple[x: int, y: int, z: int]
+
+  Chunk = array[0..256, array[0..16, array[0..16, int]]]
 
 let blockToId = {
   "air": 0,
   "bedrock": 1,
   "stone": 2,
-  "dirf": 3,
+  "dirt": 3,
   "grass": 4,
   "water": 5
 }.newTable
@@ -19,12 +34,12 @@ let idToBlock = {
   0: "air",
   1: "bedrock",
   2: "stone",
-  3: "dirf",
+  3: "dirt",
   4: "grass",
   5: "water"
 }.newTable
 
-proc newBlankChunk(): array[0..256, array[0..16, array[0..16, int]]] =
+proc newBlankChunk(): Chunk =
   for y in countup(0, 255):
     for z in countup(0, 15):
       for x in countup(0, 15):
@@ -34,7 +49,7 @@ proc newBlankChunk(): array[0..256, array[0..16, array[0..16, int]]] =
           of 5..69:
             result[y][z][x] = blockToId["stone"]
           of 70..73:
-            result[y][z][x] = blockToId["dirf"]
+            result[y][z][x] = blockToId["dirt"]
           of 74:
             result[y][z][x] = blockToId["grass"]
           else:
@@ -46,7 +61,7 @@ proc fmtFace(a: int, b: int, c: int, d: int): string =
 proc fmtPoint(p: Point): string =
   return "v " & $p.x & " " & $p.y & " " & $p.z
 
-proc dumpToObjFile(file: FileStream, chunk: array[0..256, array[0..16, array[0..16, int]]]) {.discardable.} =
+proc dumpToObjFile(file: FileStream, chunks: Table[tuple[x: int, z: int], Chunk]) {.discardable.} =
   var points: seq[Point]
   var rPoints = initTable[Point, int]()
   var faces: seq[string]
@@ -62,89 +77,91 @@ proc dumpToObjFile(file: FileStream, chunk: array[0..256, array[0..16, array[0..
       faces.add(f)
       rFaces[f] = len(faces) - 1
 
-  # used to deal with chunk offset, not needed here rn but will be later
-  let cxo = 0 * 16
-  let czo = 0 * 16
+  for cx, cz in chunks.keys():
+    let chunk = chunks[(cx, cz)]
 
-  # add points
-  for y in countup(0, 255):
-    for z in countup(0, 15):
-      for x in countup(0, 15):
-        if chunk[y][z][x] == blockToId["air"]:
-          continue
+    let cxo = cx * 16
+    let czo = cz * 16
 
-        let tx = x + cxo
-        let tz = z + czo
+    # add points
+    for y in countup(0, 255):
+      for z in countup(0, 15):
+        for x in countup(0, 15):
+          if chunk[y][z][x] == blockToId["air"]:
+            continue
 
-        let ps = [
-          (tx, y, tz),
-          (tx + 1, y, tz),
-          (tx, y + 1, tz),
-          (tx, y, tz + 1),
-          (tx + 1, y + 1, tz),
-          (tx, y + 1, tz + 1),
-          (tx + 1, y, tz + 1),
-          (tx + 1, y + 1, tz + 1)
-        ]
+          let tx = x + cxo
+          let tz = z + czo
 
-        for p in ps:
-          appendPoint(p)
+          let ps = [
+            (tx, y, tz),
+            (tx + 1, y, tz),
+            (tx, y + 1, tz),
+            (tx, y, tz + 1),
+            (tx + 1, y + 1, tz),
+            (tx, y + 1, tz + 1),
+            (tx + 1, y, tz + 1),
+            (tx + 1, y + 1, tz + 1)
+          ]
 
-  # add faces
-  for y in countup(0, 255):
-    for z in countup(0, 15):
-      for x in countup(0, 15):
-        let blockId = chunk[y][z][x]
+          for p in ps:
+            appendPoint(p)
 
-        if blockId == blockToId["air"]:
-          continue
+    # add faces
+    for y in countup(0, 255):
+      for z in countup(0, 15):
+        for x in countup(0, 15):
+          let blockId = chunk[y][z][x]
 
-        var visible = false
+          if blockId == blockToId["air"]:
+            continue
 
-        if y == 0 or z == 0 or x == 0:
-          visible = true
-        else:
-          try:
-            for y2 in [y - 1, y + 1]:
-              for z2 in [z - 1, z + 1]:
-                for x2 in [x - 1, x + 1]:
-                  try:
-                    if chunk[y2][z2][x2] == 0:
-                      visible = true
-                      raise newException(BreakOutOfLoops, "yeet")
-                  except IndexDefect:
-                    discard
-          except BreakOutOfLoops:
-            discard
+          var visible = false
 
-        if not visible:
-          continue
+          if y == 0 or z == 0 or x == 0:
+            visible = true
+          else:
+            try:
+              for y2 in [y - 1, y + 1]:
+                for z2 in [z - 1, z + 1]:
+                  for x2 in [x - 1, x + 1]:
+                    try:
+                      if chunk[y2][z2][x2] == 0:
+                        visible = true
+                        raise newException(BreakOutOfLoops, "yeet")
+                    except IndexDefect:
+                      discard
+            except BreakOutOfLoops:
+              discard
 
-        let blockName = idToBlock[blockId]
+          if not visible:
+            continue
 
-        let tx = x + cxo
-        let tz = z + czo
+          let blockName = idToBlock[blockId]
 
-        let i1 = rpoints[(tx, y, tz)] + 1
-        let i2 = rpoints[(tx + 1, y, tz)] + 1
-        let i3 = rpoints[(tx, y + 1, tz)] + 1
-        let i4 = rpoints[(tx, y, tz + 1)] + 1
-        let i5 = rpoints[(tx + 1, y + 1, tz)] + 1
-        let i6 = rpoints[(tx, y + 1, tz + 1)] + 1
-        let i7 = rpoints[(tx + 1, y, tz + 1)] + 1
-        let i8 = rpoints[(tx + 1, y + 1, tz + 1)] + 1
+          let tx = x + cxo
+          let tz = z + czo
 
-        let fs = [
-          "usemtl " & blockName & "\n" & fmtFace(i1, i2, i7, i4),
-          fmtFace(i1, i2, i5, i3),
-          fmtFace(i4, i7, i8, i6),
-          fmtFace(i1, i4, i6, i3),
-          fmtFace(i2, i5, i8, i7),
-          fmtFace(i3, i5, i8, i6)
-        ]
+          let i1 = rpoints[(tx, y, tz)] + 1
+          let i2 = rpoints[(tx + 1, y, tz)] + 1
+          let i3 = rpoints[(tx, y + 1, tz)] + 1
+          let i4 = rpoints[(tx, y, tz + 1)] + 1
+          let i5 = rpoints[(tx + 1, y + 1, tz)] + 1
+          let i6 = rpoints[(tx, y + 1, tz + 1)] + 1
+          let i7 = rpoints[(tx + 1, y, tz + 1)] + 1
+          let i8 = rpoints[(tx + 1, y + 1, tz + 1)] + 1
 
-        for f in fs:
-          appendFace(f)
+          let fs = [
+            "usemtl " & blockName & "\n" & fmtFace(i1, i2, i7, i4),
+            fmtFace(i1, i2, i5, i3),
+            fmtFace(i4, i7, i8, i6),
+            fmtFace(i1, i4, i6, i3),
+            fmtFace(i2, i5, i8, i7),
+            fmtFace(i3, i5, i8, i6)
+          ]
+
+          for f in fs:
+            appendFace(f)
 
   for p in points:
     file.writeLine(fmtPoint(p))
@@ -153,9 +170,18 @@ proc dumpToObjFile(file: FileStream, chunk: array[0..256, array[0..16, array[0..
     file.writeLine(face)
 
 
-var file = newFileStream("test.obj", fmWrite)
-echo "Creating new chunk..."
-var chunk = newBlankChunk()
+let radius = parseInt(commandLineParams()[0])
+var chunks = initTable[tuple[x: int, z: int], Chunk]()
 
-echo "Dumping to file..."
-dumpToObjFile(file, chunk)
+echo "Generating " & $math.pow(float(radius*2), 2.0) & " chunks..."
+benchmark "Chunk Generation":
+  for x in countup(-radius, radius):
+    for z in countup(-radius, radius):
+      chunks[(x, z)] = newBlankChunk()
+
+var file = newFileStream("test.obj", fmWrite)
+
+echo "Dumping to obj file..."
+benchmark "Dump To File":
+  dumpToObjFile(file, chunks)
+  file.flush()
