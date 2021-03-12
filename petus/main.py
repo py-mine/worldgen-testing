@@ -65,9 +65,9 @@ def noisy_chunk(noise, randomness, chunk_x: int, chunk_z: int) -> list:
             for z in range(16):
                 n = noise.noise3d(x, y, z)
 
-                if y < 3:  # I do this to get more of a gradient between the different layers of bedrock
-                    if n >= 0:
-                        chunk[y + 1][z][x] = palette["bedrock"]
+                # I do this to get more of a gradient between the different layers of bedrock
+                if y < 3 and n >= 0:
+                    chunk[y + 1][z][x] = palette["bedrock"]
                 elif n > 0:
                     chunk[y + 1][z][x] = palette["bedrock"]
 
