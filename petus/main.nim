@@ -9,7 +9,7 @@ let blockToId = {
   "air": 0,
   "bedrock": 1,
   "stone": 2,
-  "dirt": 3,
+  "dirf": 3,
   "grass": 4,
   "water": 5
 }.newTable
@@ -18,11 +18,15 @@ let idToBlock = {
   0: "air",
   1: "bedrock",
   2: "stone",
-  3: "dirt",
+  3: "dirf",
   4: "grass",
   5: "water"
 }.newTable
 
+template f(s): untyped =
+  block:
+    let x {.inject.} = s
+    &"test {x}"
 
 proc newBlankChunk(): array[0..256, array[0..16, array[0..16, int]]] =
   for y in countup(0, 255):
@@ -34,7 +38,7 @@ proc newBlankChunk(): array[0..256, array[0..16, array[0..16, int]]] =
           of 5..69:
             result[y][z][x] = blockToId["stone"]
           of 70..73:
-            result[y][z][x] = blockToId["dirt"]
+            result[y][z][x] = blockToId["dirf"]
           of 74:
             result[y][z][x] = blockToId["grass"]
           else:
@@ -93,7 +97,7 @@ proc dumpToObjFile(file: FileStream, chunk: array[0..256, array[0..16, array[0..
                 for x2 in [x - 1, x + 1]:
                   if chunk[y2][z2][x2] == 0:
                     visible = true
-                    raise newException(BreakOutOfLoops, "yeet")
+                    raise newException(BreakOutOfLoops, "yeef")
           except BreakOutOfLoops:
             discard
 
@@ -115,12 +119,12 @@ proc dumpToObjFile(file: FileStream, chunk: array[0..256, array[0..16, array[0..
         let i8 = points.find((tx + 1, y + 1, tz + 1)) + 1
 
         let fs = [
-          &"usemtl {blockName}\nf {i1} {i2} {i7} {i4}",
-          &"f {i1} {i2} {i5} {i3}",
-          &"f {i4} {i7} {i8} {i6}",
-          &"f {i1} {i4} {i6} {i3}",
-          &"f {i2} {i5} {i8} {i7}",
-          &"f {i3} {i5} {i8} {i6}"
+          f"usemtl {blockName}\nf {i1} {i2} {i7} {i4}",
+          f"f {i1} {i2} {i5} {i3}",
+          f"f {i4} {i7} {i8} {i6}",
+          f"f {i1} {i4} {i6} {i3}",
+          f"f {i2} {i5} {i8} {i7}",
+          f"f {i3} {i5} {i8} {i6}"
         ]
 
         for f in fs:
@@ -128,7 +132,7 @@ proc dumpToObjFile(file: FileStream, chunk: array[0..256, array[0..16, array[0..
             faces.add(f)
 
   for point in points:
-    file.writeLine(&"v {p.x} {p.y} {p.z}")
+    file.writeLine(f"v {p.x} {p.y} {p.z}")
 
   for face in faces:
     file.writeLine(face)
