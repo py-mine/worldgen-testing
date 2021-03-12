@@ -33,15 +33,21 @@ def distance(y1: int, z1: int, x1: int, y2: int, z2: int, x2: int) -> float:
     return math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2 + (z2 - z1) ** 2)
 
 
-def remove_sphere(chunk: list, y: int, z: int, x: int, radius: int) -> None:
+def remove_sphere(chunk: dict, y: int, z: int, x: int, radius: int) -> None:
     for y2 in range(y - radius, y + radius):
         for z2 in range(z - radius, z + radius):
             for x2 in range(x - radius, x + radius):
                 if distance(y, z, x, y2, z2, x2) < radius:
+                    cx = math.floor(x2/16)
+                    cz = math.floor(z2/16)
                     try:
-                        chunk[y2][z2][x2] = 0  # air
-                    except IndexError:
+                        chunk = chunks[cx, cz]
+                        if chunk[y2][z2][x2] != 1: # bedrock
+                            chunk[y2][z2][x2] = 0  # air
+                        chunks[cx, cz] = chunk
+                    except (IndexError, KeyError):
                         pass
+    return chunks
 
 
 def noisy_chunk(noise, randomness, chunk_x: int, chunk_z: int) -> list:
@@ -118,32 +124,46 @@ def noisy_chunk(noise, randomness, chunk_x: int, chunk_z: int) -> list:
                     elif n > 0:
                         chunk[y][z][x] = palette["bedrock"]
 
-    y = randomness.randint(9, height_factor - 16)
-    z = randomness.randint(0, 16)
-    x = randomness.randint(0, 16)
+    return chunk
+
+def wormy_bois(chunks, randomness, noise):
 
     segment_len = 3
     segments = 10
+    worms = []
 
-    for s in range(segments):
-        noise_a = noise.noise3d(x + x_offset, y, z + z_offset)
-        noise_b = noise.noise3d((x + x_offset)**2, y * y, (z + z_offset)**2)
 
-        pitch = map_range(noise_a, -1, 1, -360, 360)
-        yaw = map_range(noise_b, -1, 1, -360, 360)
+    for cx, cz in chunks.keys():
+        chunk = chunks[cx, cz]
+        x_offset = cx * 16
+        z_offset = cz * 16
+        for y in range(5,64):
+            for z in range(16):
+                for x in range(16):
+                    if noise.noise3d(x+x_offset, y, z+z_offset) > 0.85:
+                        worms += [(x+x_offset, y, z+z_offset)]
 
-        y2 = math.sin(yaw) * math.cos(pitch)
-        z2 = math.sin(pitch)
-        x2 = math.cos(yaw) * math.cos(pitch)
 
-        for p in range(segment_len):
-            remove_sphere(chunk, int(y), int(z), int(x), 4)
+    for worm in worms:
+        x, y, z = worm
+        for s in range(segments):
+            noise_a = noise.noise3d(x, y, z)
+            noise_b = noise.noise3d(x * x, y * y, z * z)
 
-            y += y2
-            z += z2
-            x += x2
+            pitch = map_range(noise_a, -1, 1, -360, 360)
+            yaw = map_range(noise_b, -1, 1, -360, 360)
 
-    return chunk
+            y2 = math.sin(yaw) * math.cos(pitch)
+            z2 = math.sin(pitch)
+            x2 = math.cos(yaw) * math.cos(pitch)
+
+            for p in range(segment_len):
+                chunks = remove_sphere(chunks, int(y), int(z), int(x), 4)
+
+                y += y2
+                z += z2
+                x += x2
+    return chunks, len(worms)
 
 
 def dump_to_obj(file, chunks: dict) -> None:
@@ -186,45 +206,61 @@ def dump_to_obj(file, chunks: dict) -> None:
                     append_point(tx + 1, y, tz + 1)
                     append_point(tx + 1, y + 1, tz + 1)
 
-        maxes = {}
+        # maxes = {}
+        #
+        # for y in range(256):
+        #     for z in range(16):
+        #         for x in range(16):
+        #             if chunk[y][z][x] != 0 and y > maxes.get((z, x), -1):
+        #                 maxes[z, x] = y
 
         for y in range(256):
             for z in range(16):
                 for x in range(16):
-                    if chunk[y][z][x] != 0 and y > maxes.get((z, x), -1):
-                        maxes[z, x] = y
+                    block = chunk[y][z][x]
 
-        for y in range(256):
-            for z in range(16):
-                prim_cond = y == 0 or z == 0 or z == 15 or True
+                    if chunk[y][z][x] == 0:  # air
+                        continue
 
-                for x in range(16):
-                    if prim_cond or maxes[z, x] == y or x == 0 or x == 15:
-                        block = chunk[y][z][x]
+                    visible = False
 
-                        if block == 0:  # air
-                            continue
+                    if z == 0 or x == 0:
+                        visible = True
+                    else:
+                        for y2 in (y-1, y+1):
+                            for z2 in (z-1, z+1):
+                                for x2 in (x-1, x+1):
+                                    try:
+                                        if chunk[y2][z2][x2] == 0:
+                                            visible = True
+                                            break
+                                    except IndexError:
+                                        visible = True
+                                        break
 
-                        block = palette[block]
+                    if not visible:
+                        continue
 
-                        tx = x + cxo
-                        tz = z + czo
+                    block = palette[block]
 
-                        i1 = rpoints[(tx, y, tz)] + 1
-                        i2 = rpoints[(tx + 1, y, tz)] + 1
-                        i3 = rpoints[(tx, y + 1, tz)] + 1
-                        i4 = rpoints[(tx, y, tz + 1)] + 1
-                        i5 = rpoints[(tx + 1, y + 1, tz)] + 1
-                        i6 = rpoints[(tx, y + 1, tz + 1)] + 1
-                        i7 = rpoints[(tx + 1, y, tz + 1)] + 1
-                        i8 = rpoints[(tx + 1, y + 1, tz + 1)] + 1
+                    tx = x + cxo
+                    tz = z + czo
 
-                        append_face(f"usemtl {block}\nf {i1} {i2} {i7} {i4}")
-                        append_face(f"f {i1} {i2} {i5} {i3}")
-                        append_face(f"f {i4} {i7} {i8} {i6}")
-                        append_face(f"f {i1} {i4} {i6} {i3}")
-                        append_face(f"f {i2} {i5} {i8} {i7}")
-                        append_face(f"f {i3} {i5} {i8} {i6}")
+                    i1 = rpoints[(tx, y, tz)] + 1
+                    i2 = rpoints[(tx + 1, y, tz)] + 1
+                    i3 = rpoints[(tx, y + 1, tz)] + 1
+                    i4 = rpoints[(tx, y, tz + 1)] + 1
+                    i5 = rpoints[(tx + 1, y + 1, tz)] + 1
+                    i6 = rpoints[(tx, y + 1, tz + 1)] + 1
+                    i7 = rpoints[(tx + 1, y, tz + 1)] + 1
+                    i8 = rpoints[(tx + 1, y + 1, tz + 1)] + 1
+
+                    append_face(f"usemtl {block}\nf {i1} {i2} {i7} {i4}")
+                    append_face(f"f {i1} {i2} {i5} {i3}")
+                    append_face(f"f {i4} {i7} {i8} {i6}")
+                    append_face(f"f {i1} {i4} {i6} {i3}")
+                    append_face(f"f {i2} {i5} {i8} {i7}")
+                    append_face(f"f {i3} {i5} {i8} {i6}")
 
     file.write("\n".join([f"v {p[0]} {p[1]} {p[2]}" for p in points.values()]) + "\n" + "\n".join(faces.values()) + "\n")
 
@@ -245,6 +281,13 @@ with open("test.obj", "w+") as f:
             chunks[x, z] = noisy_chunk(noise, randomness, x, z)
 
     print(f"Done generating chunks. ({(pf() - start):02.02f} seconds for {len(chunks)} chunks)")
+
+    print("Activating wormy bois...")
+    start = pf()
+
+    chunks, n = wormy_bois(chunks, randomness, noise)
+
+    print(f"Wormy bois finished. ({(pf() - start):02.02f} seconds for {n} wormy bois)")
 
     print("Dumping to obj file...")
     start = pf()
