@@ -39,11 +39,13 @@ def remove_sphere(chunks: dict, y: int, z: int, x: int, radius: int) -> None:
             for x2 in range(x - radius, x + radius):
                 d = distance(y, z, x, y2, z2, x2)
                 if d < radius:
-                    cx = math.floor(x2/16)
-                    cz = math.floor(z2/16)
+                    cx = math.floor(x2 / 16)
+                    cz = math.floor(z2 / 16)
                     try:
-                        if chunks[cx,cz][y2][z2%16][x2%16] != 1 and not (int(d)==radius-1 and chunks[cx,cz][y2][z2%16][x2%16]==4): # bedrock
-                            chunks[cx,cz][y2][z2%16][x2%16] = 0  # air
+                        if chunks[cx, cz][y2][z2 % 16][x2 % 16] != 1 and not (
+                            int(d) == radius - 1 and chunks[cx, cz][y2][z2 % 16][x2 % 16] == 4
+                        ):  # bedrock
+                            chunks[cx, cz][y2][z2 % 16][x2 % 16] = 0  # air
                     except:
                         pass
     return chunks
@@ -115,7 +117,7 @@ def noisy_chunk(noise, randomness, chunk_x: int, chunk_z: int) -> list:
                 if y == 0:
                     chunk[y][z][x] = palette["bedrock"]
                 else:
-                    n = noise.noise3d(x+x_offset, y, z+z_offset)
+                    n = noise.noise3d(x + x_offset, y, z + z_offset)
 
                     # I do this to get more of a gradient between the different layers of bedrock
                     if y < 2 and n >= 0:
@@ -125,22 +127,22 @@ def noisy_chunk(noise, randomness, chunk_x: int, chunk_z: int) -> list:
 
     return chunk
 
+
 def wormy_bois(chunks, randomness, noise):
 
     segment_len = 3
     segments = 25
     worms = []
 
-
     for cx, cz in chunks.keys():
         chunk = chunks[cx, cz]
         x_offset = cx * 16
         z_offset = cz * 16
-        for y in range(5,72):
+        for y in range(5, 72):
             for z in range(16):
                 for x in range(16):
-                    if noise.noise3d(x+x_offset, y, z+z_offset) > 0.875:
-                        worms += [(x+x_offset, y, z+z_offset)]
+                    if noise.noise3d(x + x_offset, y, z + z_offset) > 0.875:
+                        worms += [(x + x_offset, y, z + z_offset)]
         # if noise.noise2d(x_offset*4, z_offset*4) > 0.875:
         #     max = (0, 0, 0, 0)
         #     for y in range(5, 128):
@@ -234,9 +236,9 @@ def dump_to_obj(file, chunks: dict) -> None:
                     if z == 0 or x == 0:
                         visible = True
                     else:
-                        for y2 in (y-1, y+1):
-                            for z2 in (z-1, z+1):
-                                for x2 in (x-1, x+1):
+                        for y2 in (y - 1, y + 1):
+                            for z2 in (z - 1, z + 1):
+                                for x2 in (x - 1, x + 1):
                                     try:
                                         if chunk[y2][z2][x2] == 0:
                                             visible = True
