@@ -110,7 +110,7 @@ def noisy_chunk(noise, randomness, chunk_x: int, chunk_z: int) -> list:
                 if y == 0:
                     chunk[y][z][x] = palette["bedrock"]
                 else:
-                    n = noise.noise3d(x+x_offset, y, z+z_offset)
+                    n = noise.noise3d(x + x_offset, y, z + z_offset)
 
                     # I do this to get more of a gradient between the different layers of bedrock
                     if y < 2 and n >= 0:
@@ -127,7 +127,7 @@ def noisy_chunk(noise, randomness, chunk_x: int, chunk_z: int) -> list:
 
     for s in range(segments):
         noise_a = noise.noise3d(x + x_offset, y, z + z_offset)
-        noise_b = noise.noise3d((x + x_offset)**2, y * y, (z + z_offset)**2)
+        noise_b = noise.noise3d((x + x_offset) ** 2, y * y, (z + z_offset) ** 2)
 
         pitch = map_range(noise_a, 0, 1, -360, 360)
         yaw = map_range(noise_b, 0, 1, -360, 360)
@@ -207,9 +207,9 @@ def dump_to_obj(file, chunks: dict) -> None:
                     if z == 0 or x == 0:
                         visible = True
                     else:
-                        for y2 in (y-1, y+1):
-                            for z2 in (z-1, z+1):
-                                for x2 in (x-1, x+1):
+                        for y2 in (y - 1, y + 1):
+                            for z2 in (z - 1, z + 1):
+                                for x2 in (x - 1, x + 1):
                                     try:
                                         if chunk[y2][z2][x2] == 0:
                                             visible = True
