@@ -1,8 +1,10 @@
 import streams
+import hashes
 import tables
 
 type
   BreakOutOfLoops = object of CatchableError
+  Point = tuple[x: int, y: int, z: int]
 
 let blockToId = {
   "air": 0,
@@ -41,12 +43,24 @@ proc newBlankChunk(): array[0..256, array[0..16, array[0..16, int]]] =
 proc fmtFace(a: int, b: int, c: int, d: int): string =
   return "f " & $a & " " & $b & " " & $c & " " & $d
 
-proc fmtPoint(p: tuple[x: int, y: int, z: int]): string =
+proc fmtPoint(p: Point): string =
   return "v " & $p.x & " " & $p.y & " " & $p.z
 
 proc dumpToObjFile(file: FileStream, chunk: array[0..256, array[0..16, array[0..16, int]]]) {.discardable.} =
-  var points: seq[tuple[x: int, y: int, z: int]]
+  var points: seq[Point]
+  var rPoints = initTable[Point, int]()
   var faces: seq[string]
+  var rFaces = initTable[string, int]()
+
+  proc appendPoint(p: Point) =
+    if rPoints.getOrDefault(p, -1) == -1:
+      points.add(p)
+      rPoints[p] = len(points) - 1
+
+  proc appendFace(f: string) =
+    if rFaces.getOrDefault(f, -1) == -1:
+      faces.add(f)
+      rFaces[f] = len(faces) - 1
 
   # used to deal with chunk offset, not needed here rn but will be later
   let cxo = 0 * 16
@@ -74,8 +88,7 @@ proc dumpToObjFile(file: FileStream, chunk: array[0..256, array[0..16, array[0..
         ]
 
         for p in ps:
-          if not (p in points):
-            points.add(p)
+          appendPoint(p)
 
   # add faces
   for y in countup(0, 255):
@@ -112,14 +125,14 @@ proc dumpToObjFile(file: FileStream, chunk: array[0..256, array[0..16, array[0..
         let tx = x + cxo
         let tz = z + czo
 
-        let i1 = points.find((tx, y, tz)) + 1
-        let i2 = points.find((tx + 1, y, tz)) + 1
-        let i3 = points.find((tx, y + 1, tz)) + 1
-        let i4 = points.find((tx, y, tz + 1)) + 1
-        let i5 = points.find((tx + 1, y + 1, tz)) + 1
-        let i6 = points.find((tx, y + 1, tz + 1)) + 1
-        let i7 = points.find((tx + 1, y, tz + 1)) + 1
-        let i8 = points.find((tx + 1, y + 1, tz + 1)) + 1
+        let i1 = rpoints[(tx, y, tz)] + 1
+        let i2 = rpoints[(tx + 1, y, tz)] + 1
+        let i3 = rpoints[(tx, y + 1, tz)] + 1
+        let i4 = rpoints[(tx, y, tz + 1)] + 1
+        let i5 = rpoints[(tx + 1, y + 1, tz)] + 1
+        let i6 = rpoints[(tx, y + 1, tz + 1)] + 1
+        let i7 = rpoints[(tx + 1, y, tz + 1)] + 1
+        let i8 = rpoints[(tx + 1, y + 1, tz + 1)] + 1
 
         let fs = [
           "usemtl " & blockName & "\n" & fmtFace(i1, i2, i7, i4),
@@ -131,11 +144,10 @@ proc dumpToObjFile(file: FileStream, chunk: array[0..256, array[0..16, array[0..
         ]
 
         for f in fs:
-          if not (f in faces):
-            faces.add(f)
+          appendFace(f)
 
-  for point in points:
-    file.writeLine(fmtPoint(point))
+  for p in points:
+    file.writeLine(fmtPoint(p))
 
   for face in faces:
     file.writeLine(face)
