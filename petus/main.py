@@ -48,7 +48,6 @@ def remove_sphere(chunks: dict, y: int, z: int, x: int, radius: int) -> None:
                             chunks[cx, cz][y2][z2 % 16][x2 % 16] = 0  # air
                     except:
                         pass
-    return chunks
 
 
 def noisy_chunk(noise, randomness, chunk_x: int, chunk_z: int) -> list:
