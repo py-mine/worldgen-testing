@@ -33,19 +33,18 @@ def distance(y1: int, z1: int, x1: int, y2: int, z2: int, x2: int) -> float:
     return math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2 + (z2 - z1) ** 2)
 
 
-def remove_sphere(chunk: dict, y: int, z: int, x: int, radius: int) -> None:
+def remove_sphere(chunks: dict, y: int, z: int, x: int, radius: int) -> None:
     for y2 in range(y - radius, y + radius):
         for z2 in range(z - radius, z + radius):
             for x2 in range(x - radius, x + radius):
-                if distance(y, z, x, y2, z2, x2) < radius:
+                d = distance(y, z, x, y2, z2, x2)
+                if d < radius:
                     cx = math.floor(x2/16)
                     cz = math.floor(z2/16)
                     try:
-                        chunk = chunks[cx, cz]
-                        if chunk[y2][z2][x2] != 1: # bedrock
-                            chunk[y2][z2][x2] = 0  # air
-                        chunks[cx, cz] = chunk
-                    except (IndexError, KeyError):
+                        if chunks[cx,cz][y2][z2%16][x2%16] != 1 and not (int(d)==radius-1 and chunks[cx,cz][y2][z2%16][x2%16]==4): # bedrock
+                            chunks[cx,cz][y2][z2%16][x2%16] = 0  # air
+                    except:
                         pass
     return chunks
 
@@ -129,7 +128,7 @@ def noisy_chunk(noise, randomness, chunk_x: int, chunk_z: int) -> list:
 def wormy_bois(chunks, randomness, noise):
 
     segment_len = 3
-    segments = 10
+    segments = 25
     worms = []
 
 
@@ -137,12 +136,20 @@ def wormy_bois(chunks, randomness, noise):
         chunk = chunks[cx, cz]
         x_offset = cx * 16
         z_offset = cz * 16
-        for y in range(5,64):
+        for y in range(5,72):
             for z in range(16):
                 for x in range(16):
-                    if noise.noise3d(x+x_offset, y, z+z_offset) > 0.85:
+                    if noise.noise3d(x+x_offset, y, z+z_offset) > 0.875:
                         worms += [(x+x_offset, y, z+z_offset)]
-
+        # if noise.noise2d(x_offset*4, z_offset*4) > 0.875:
+        #     max = (0, 0, 0, 0)
+        #     for y in range(5, 128):
+        #         for z in range(16):
+        #             for x in range(16):
+        #                 n = noise.noise3d(x+x_offset, y, z+z_offset)
+        #                 if n > max[3]:
+        #                     max = (x, y, z, n)
+        #     worms += [(max[0]+x_offset, max[1], max[2]+z_offset)]
 
     for worm in worms:
         x, y, z = worm
