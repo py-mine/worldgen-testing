@@ -36,22 +36,19 @@ def distance(y1: int, z1: int, x1: int, y2: int, z2: int, x2: int) -> float:
 def remove_sphere(chunks: dict, y: int, z: int, x: int, radius: int) -> None:
     for y2 in range(y - radius, y + radius):
         for z2 in range(z - radius, z + radius):
-            cz = z2 // 16
-
             for x2 in range(x - radius, x + radius):
                 d = distance(y, z, x, y2, z2, x2)
-
                 if d < radius:
-                    cx = x2 // 16
-
-                    z2_mod_16 = z2 % 16
-                    x2_mod_16 = x2 % 16
-
+                    cx = math.floor(x2 / 16)
+                    cz = math.floor(z2 / 16)
                     try:
-                        if chunks[cx, cz][y2][z2_mod_16][x2_mod_16] == 4 and int(d) != radius - 1:
-                            chunks[cx, cz][y2][z2_mod_16][x2_mod_16] = 0  # air
-                    except Exception as e:
-                        print(e)
+                        if chunks[cx, cz][y2][z2 % 16][x2 % 16] != 1 and not (
+                            int(d) == radius - 1 and chunks[cx, cz][y2][z2 % 16][x2 % 16] == 4
+                        ):  # bedrock
+                            chunks[cx, cz][y2][z2 % 16][x2 % 16] = 0  # air
+                    except:
+                        pass
+    return chunks
 
 
 def noisy_chunk(noise, randomness, chunk_x: int, chunk_z: int) -> list:
@@ -132,20 +129,22 @@ def noisy_chunk(noise, randomness, chunk_x: int, chunk_z: int) -> list:
 
 
 def wormy_bois(chunks, randomness, noise):
-
     segment_len = 3
     segments = 25
     worms = []
 
     for cx, cz in chunks.keys():
         chunk = chunks[cx, cz]
+
         x_offset = cx * 16
         z_offset = cz * 16
+
         for y in range(5, 72):
             for z in range(16):
                 for x in range(16):
                     if noise.noise3d(x + x_offset, y, z + z_offset) > 0.875:
                         worms += [(x + x_offset, y, z + z_offset)]
+
         # if noise.noise2d(x_offset*4, z_offset*4) > 0.875:
         #     max = (0, 0, 0, 0)
         #     for y in range(5, 128):
@@ -171,7 +170,7 @@ def wormy_bois(chunks, randomness, noise):
             x2 = math.cos(yaw) * math.cos(pitch)
 
             for p in range(segment_len):
-                remove_sphere(chunks, int(y), int(z), int(x), 4)
+                chunks = remove_sphere(chunks, int(y), int(z), int(x), 4)
 
                 y += y2
                 z += z2
@@ -233,7 +232,7 @@ def dump_to_obj(file, chunks: dict) -> None:
                 for x in range(16):
                     block = chunk[y][z][x]
 
-                    if block == 0:  # air
+                    if chunk[y][z][x] == 0:  # air
                         continue
 
                     visible = False
