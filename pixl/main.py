@@ -170,7 +170,7 @@ def wormy_bois(chunks, randomness, noise):
             x2 = math.cos(yaw) * math.cos(pitch)
 
             for p in range(segment_len):
-                chunks = remove_sphere(chunks, int(y), int(z), int(x), 4)
+                remove_sphere(chunks, int(y), int(z), int(x), 4)
 
                 y += y2
                 z += z2
