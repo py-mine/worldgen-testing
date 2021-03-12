@@ -1,3 +1,4 @@
+import strformat
 import streams
 import tables
 
@@ -114,5 +115,20 @@ proc dumpToObjFile(file: FileStream, chunk: array[0..256, array[0..16, array[0..
         let i8 = points.find((tx + 1, y + 1, tz + 1)) + 1
 
         let fs = [
-          "usemtl " + blockName + ""
+          &"usemtl {blockName}\nf {i1} {i2} {i7} {i4}",
+          &"f {i1} {i2} {i5} {i3}",
+          &"f {i4} {i7} {i8} {i6}",
+          &"f {i1} {i4} {i6} {i3}",
+          &"f {i2} {i5} {i8} {i7}",
+          &"f {i3} {i5} {i8} {i6}"
         ]
+
+        for f in fs:
+          if not (f in faces):
+            faces.add(f)
+
+  for point in points:
+    file.writeLine(&"v {p.x} {p.y} {p.z}")
+
+  for face in faces:
+    file.writeLine(face)
