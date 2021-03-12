@@ -43,13 +43,14 @@ def remove_sphere(chunks: dict, y: int, z: int, x: int, radius: int) -> None:
                 if d < radius:
                     cx = math.floor(x2 / 16)
                     cz = math.floor(z2 / 16)
+
                     try:
                         if chunks[cx, cz][y2][z2 % 16][x2 % 16] != 1 and not (
                             int(d) == radius - 1 and chunks[cx, cz][y2][z2 % 16][x2 % 16] == 4
                         ):  # bedrock
                             chunks[cx, cz][y2][z2 % 16][x2 % 16] = 0  # air
-                    except:
-                        pass
+                    except Exception as e:
+                        print(e)
 
 
 def noisy_chunk(noise, randomness, chunk_x: int, chunk_z: int) -> list:
