@@ -44,8 +44,8 @@ def remove_sphere(chunks: dict, y: int, z: int, x: int, radius: int) -> None:
                 if d < radius:
                     cx = x2 // 16
 
-                    z2_mod_16 = z2_mod_16
-                    x2_mod_16 = x2_mod_16
+                    z2_mod_16 = z2 % 16
+                    x2_mod_16 = x2 % 16
 
                     try:
                         if chunks[cx, cz][y2][z2_mod_16][x2_mod_16] == 4 and int(d) != radius - 1:
