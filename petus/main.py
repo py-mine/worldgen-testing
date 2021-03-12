@@ -143,7 +143,7 @@ def wormy_bois(chunks, randomness, noise):
             for z in range(16):
                 for x in range(16):
                     if noise.noise3d(x + x_offset, y, z + z_offset) > 0.875:
-                        worms += [(x + x_offset, y, z + z_offset)]
+                        worms.append((x + x_offset, y, z + z_offset))
 
         # if noise.noise2d(x_offset*4, z_offset*4) > 0.875:
         #     max = (0, 0, 0, 0)
