@@ -1,4 +1,3 @@
-import strformat
 import streams
 import tables
 
@@ -23,11 +22,6 @@ let idToBlock = {
   5: "water"
 }.newTable
 
-template f(s): untyped =
-  block:
-    let x {.inject.} = s
-    &"test {x}"
-
 proc newBlankChunk(): array[0..256, array[0..16, array[0..16, int]]] =
   for y in countup(0, 255):
     for z in countup(0, 15):
@@ -43,6 +37,12 @@ proc newBlankChunk(): array[0..256, array[0..16, array[0..16, int]]] =
             result[y][z][x] = blockToId["grass"]
           else:
             result[y][z][x] = blockToId["air"]
+
+proc fmtFace(a: int, b: int, c: int, d: int): string =
+  return "f " & $a & " " & $b & " " & $c & " " & $d
+
+proc fmtPoint(p: tuple[x: int, y: int, z: int]): string =
+  return "v " & $p.x & " " & $p.y & " " & $p.z
 
 proc dumpToObjFile(file: FileStream, chunk: array[0..256, array[0..16, array[0..16, int]]]) {.discardable.} =
   var points: seq[tuple[x: int, y: int, z: int]]
@@ -88,7 +88,7 @@ proc dumpToObjFile(file: FileStream, chunk: array[0..256, array[0..16, array[0..
 
         var visible = false
 
-        if z == 0 or x == 0:
+        if y == 0 or z == 0 or x == 0:
           visible = true
         else:
           try:
@@ -122,12 +122,12 @@ proc dumpToObjFile(file: FileStream, chunk: array[0..256, array[0..16, array[0..
         let i8 = points.find((tx + 1, y + 1, tz + 1)) + 1
 
         let fs = [
-          f"usemtl {blockName}\nf {i1} {i2} {i7} {i4}",
-          f"f {i1} {i2} {i5} {i3}",
-          f"f {i4} {i7} {i8} {i6}",
-          f"f {i1} {i4} {i6} {i3}",
-          f"f {i2} {i5} {i8} {i7}",
-          f"f {i3} {i5} {i8} {i6}"
+          "usemtl " & blockName & "\n" & fmtFace(i1, i2, i7, i4),
+          fmtFace(i1, i2, i5, i3),
+          fmtFace(i4, i7, i8, i6),
+          fmtFace(i1, i4, i6, i3),
+          fmtFace(i2, i5, i8, i7),
+          fmtFace(i3, i5, i8, i6)
         ]
 
         for f in fs:
@@ -135,12 +135,15 @@ proc dumpToObjFile(file: FileStream, chunk: array[0..256, array[0..16, array[0..
             faces.add(f)
 
   for point in points:
-    file.writeLine(f"v {p.x} {p.y} {p.z}")
+    file.writeLine(fmtPoint(point))
 
   for face in faces:
     file.writeLine(face)
 
 
 var file = newFileStream("test.obj", fmWrite)
+echo "Creating new chunk..."
 var chunk = newBlankChunk()
+
+echo "Dumping to file..."
 dumpToObjFile(file, chunk)
