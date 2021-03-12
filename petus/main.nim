@@ -62,6 +62,8 @@ proc fmtPoint(p: Point): string =
   return "v " & $p.x & " " & $p.y & " " & $p.z
 
 proc dumpToObjFile(file: FileStream, chunks: Table[tuple[x: int, z: int], Chunk]) {.discardable.} =
+  let maxChunkCoord: int = int(len(chunks)/4) - 1
+
   var points: seq[Point]
   var rPoints: Table[Point, int] = initTable[Point, int]()
   var pointCount: int = 0
@@ -75,14 +77,14 @@ proc dumpToObjFile(file: FileStream, chunks: Table[tuple[x: int, z: int], Chunk]
 
     if rPoints.getOrDefault(p, -1) == -1:
       points.add(p)
-      pointCount += 1
       rPoints[p] = pointCount
+      pointCount += 1
 
   proc appendFace(f: string) =
     if rFaces.getOrDefault(f, -1) == -1:
       faces.add(f)
-      faceCount += 1
       rFaces[f] = faceCount
+      faceCount += 1
 
   for cx, cz in chunks.keys():
     let chunk = chunks[(cx, cz)]
@@ -91,63 +93,70 @@ proc dumpToObjFile(file: FileStream, chunks: Table[tuple[x: int, z: int], Chunk]
     let czo = cz * 16
 
     # add points
-    benchmark "Points Calculation":
-      for y in countup(0, 255):
-        for z in countup(0, 15):
-          for x in countup(0, 15):
-            if chunk[y][z][x] == blockToId["air"]:
-              continue
+    for y in countup(0, 255):
+      for z in countup(0, 15):
+        for x in countup(0, 15):
+          if chunk[y][z][x] == blockToId["air"]:
+            continue
 
-            let tx = x + cxo
-            let tz = z + czo
+          let tx = x + cxo
+          let tz = z + czo
 
-            appendPoint(tx, y, tz)
-            appendPoint(tx + 1, y, tz)
-            appendPoint(tx, y + 1, tz)
-            appendPoint(tx, y, tz + 1)
-            appendPoint(tx + 1, y + 1, tz)
-            appendPoint(tx, y + 1, tz + 1)
-            appendPoint(tx + 1, y, tz + 1)
-            appendPoint(tx + 1, y + 1, tz + 1)
+          appendPoint(tx, y, tz)
+          appendPoint(tx + 1, y, tz)
+          appendPoint(tx, y + 1, tz)
+          appendPoint(tx, y, tz + 1)
+          appendPoint(tx + 1, y + 1, tz)
+          appendPoint(tx, y + 1, tz + 1)
+          appendPoint(tx + 1, y, tz + 1)
+          appendPoint(tx + 1, y + 1, tz + 1)
+
+    var maxes: Table[tuple[z: int, x: int], int] = initTable[tuple[z: int, x: int], int]()
+
+    for y in countup(0, 255):
+      for z in countup(0, 15):
+        for x in countup(0, 15):
+          if chunk[y][z][x] != 0 and y > maxes.getOrDefault((z, x), -1):
+            maxes[(z, x)] = y
+
+    proc doAddFace(y: int, z: int, x: int) =
+      if chunk[y][z][x] == 0:  # air
+        return
+
+      # if y != 0 and z != 15 and x != 15 and maxes[(z, x)] != y:
+      #     continue
+
+      let tx = x + cxo
+      let tz = z + czo
+
+      let i1 = rpoints[(tx, y, tz)] + 1
+      let i2 = rpoints[(tx + 1, y, tz)] + 1
+      let i3 = rpoints[(tx, y + 1, tz)] + 1
+      let i4 = rpoints[(tx, y, tz + 1)] + 1
+      let i5 = rpoints[(tx + 1, y + 1, tz)] + 1
+      let i6 = rpoints[(tx, y + 1, tz + 1)] + 1
+      let i7 = rpoints[(tx + 1, y, tz + 1)] + 1
+      let i8 = rpoints[(tx + 1, y + 1, tz + 1)] + 1
+
+      appendFace("usemtl " & idToBlock[chunk[y][z][x]] & "\n" & fmtFace(i1, i2, i7, i4))
+      appendFace(fmtFace(i1, i2, i5, i3))
+      appendFace(fmtFace(i4, i7, i8, i6))
+      appendFace(fmtFace(i1, i4, i6, i3))
+      appendFace(fmtFace(i2, i5, i8, i7))
+      appendFace(fmtFace(i3, i5, i8, i6))
 
     # add faces
-    benchmark "Faces Calculation":
-      for y in countup(0, 255):
-        for z in countup(0, 15):
-          for x in countup(0, 15):
-            if chunk[y][z][x] == 0:  # air
-              continue
+    benchmark "Adding Faces":
+      for z in countup(0, 15):
+        for x in countup(0, 15):
+          let y = maxes[(z, x)]
 
-            try:
-              for y2 in [y-1, y+1]:
-                for z2 in [z-1, z+1]:
-                  for x2 in [x-1, x+1]:
-                    try:
-                      if chunk[y2][z2][x2] == 0:
-                        let tx = x + cxo
-                        let tz = z + czo
-
-                        let i1 = rpoints[(tx, y, tz)] + 1
-                        let i2 = rpoints[(tx + 1, y, tz)] + 1
-                        let i3 = rpoints[(tx, y + 1, tz)] + 1
-                        let i4 = rpoints[(tx, y, tz + 1)] + 1
-                        let i5 = rpoints[(tx + 1, y + 1, tz)] + 1
-                        let i6 = rpoints[(tx, y + 1, tz + 1)] + 1
-                        let i7 = rpoints[(tx + 1, y, tz + 1)] + 1
-                        let i8 = rpoints[(tx + 1, y + 1, tz + 1)] + 1
-
-                        appendFace("usemtl " & idToBlock[chunk[y][z][x]] & "\n" & fmtFace(i1, i2, i7, i4))
-                        appendFace(fmtFace(i1, i2, i5, i3))
-                        appendFace(fmtFace(i4, i7, i8, i6))
-                        appendFace(fmtFace(i1, i4, i6, i3))
-                        appendFace(fmtFace(i2, i5, i8, i7))
-                        appendFace(fmtFace(i3, i5, i8, i6))
-
-                        raise BreakOutOfLoops.newException "yeet"
-                    except IndexDefect:
-                      discard
-            except BreakOutOfLoops:
-              discard
+          # if (cxo/(x+1) == 1 or czo/(z+1) == 1):
+          if (x == 0 or z == 15 or x == 15 or z == 0):
+            for y in countup(0, y):
+              doAddFace(y, z, x)
+          else:
+            doAddFace(y, z, x)
 
   for p in points:
     file.writeLine(fmtPoint(p))
@@ -158,7 +167,7 @@ proc dumpToObjFile(file: FileStream, chunks: Table[tuple[x: int, z: int], Chunk]
 let radius = parseInt(commandLineParams()[0])
 var chunks = initTable[tuple[x: int, z: int], Chunk]()
 
-echo "Generating " & $math.pow(float(radius*2), 2.0) & " chunks..."
+echo "Generating " & $(math.pow(float(radius * 2 + 1), 2.0)) & " chunks..."
 benchmark "Chunk Generation":
   for x in countup(-radius, radius):
     for z in countup(-radius, radius):
