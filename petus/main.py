@@ -5,6 +5,8 @@ import numpy
 import math
 import sys
 
+HEIGHT_FACTOR = 72
+
 
 # here, a "chunk" refers to a 256x16x16 array of block states
 
@@ -70,7 +72,7 @@ def noisy_chunk(noise, randomness, chunk_x: int, chunk_z: int) -> list:
 
     frequency = 20
     octaves = [3, 7, 12]
-    height_factor = 72  # how high the surface is
+    height_factor = HEIGHT_FACTOR  # how high the surface is
     # redistrib = 0.035 * (256 / height_factor)
     redistrib = 0.05 * (256 / height_factor)
 
@@ -138,11 +140,15 @@ def wormy_bois(chunks, randomness, noise):
         x_offset = cx * 16
         z_offset = cz * 16
 
-        for y in range(5, 72):
+        for y in range(5, HEIGHT_FACTOR):
             for z in range(16):
+                z_zo = z + z_offset
+
                 for x in range(16):
-                    if noise.noise3d(x + x_offset, y, z + z_offset) > 0.875:
-                        worms.append((x + x_offset, y, z + z_offset))
+                    x_xo = x + x_offset
+
+                    if noise.noise3d(x_xo, y, z_zo) > 0.875:
+                        worms.append((x_xo, y, z_zo))
 
         # if noise.noise2d(x_offset*4, z_offset*4) > 0.875:
         #     max = (0, 0, 0, 0)
@@ -154,9 +160,7 @@ def wormy_bois(chunks, randomness, noise):
         #                     max = (x, y, z, n)
         #     worms += [(max[0]+x_offset, max[1], max[2]+z_offset)]
 
-    for worm in worms:
-        x, y, z = worm
-
+    for x, y, z in worms:
         for s in range(segments):
             noise_a = noise.noise3d(x, y, z)
             noise_b = noise.noise3d(x * x, y * y, z * z)
