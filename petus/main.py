@@ -164,16 +164,18 @@ def wormy_bois(chunks, randomness, noise):
             pitch = map_range(noise_a, -1, 1, -360, 360)
             yaw = map_range(noise_b, -1, 1, -360, 360)
 
-            y2 = math.sin(yaw) * math.cos(pitch)
-            z2 = math.sin(pitch)
-            x2 = math.cos(yaw) * math.cos(pitch)
+            cos_pitch = math.cos(pitch)
+
+            yi = math.sin(yaw) * cos_pitch
+            zi = math.sin(pitch)
+            xi = math.cos(yaw) * cos_pitch
 
             for p in range(segment_len):
                 remove_sphere(chunks, int(y), int(z), int(x), 4)
 
-                y += y2
-                z += z2
-                x += x2
+                y += yi
+                z += zi
+                x += xi
 
     return chunks, len(worms)
 
