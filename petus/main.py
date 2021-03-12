@@ -33,15 +33,27 @@ def distance(y1: int, z1: int, x1: int, y2: int, z2: int, x2: int) -> float:
     return math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2 + (z2 - z1) ** 2)
 
 
-def remove_sphere(chunk: list, y: int, z: int, x: int, radius: int) -> None:
+def remove_sphere(chunks: dict, y: int, z: int, x: int, radius: int) -> None:
     for y2 in range(y - radius, y + radius):
         for z2 in range(z - radius, z + radius):
+            cz = z2 // 16
+
             for x2 in range(x - radius, x + radius):
-                if distance(y, z, x, y2, z2, x2) < radius:
+                d = distance(y, z, x, y2, z2, x2)
+
+                if d < radius:
+                    cx = x2 // 16
+
+                    z2_mod_16 = z2_mod_16
+                    x2_mod_16 = x2_mod_16
+
                     try:
-                        chunk[y2][z2][x2] = 0  # air
-                    except IndexError:
-                        pass
+                        if chunks[cx, cz][y2][z2_mod_16][x2_mod_16] == 4 and int(d) != radius - 1:
+                            chunks[cx, cz][y2][z2_mod_16][x2_mod_16] = 0  # air
+                    except Exception as e:
+                        print(e)
+
+    return chunks
 
 
 def noisy_chunk(noise, randomness, chunk_x: int, chunk_z: int) -> list:
