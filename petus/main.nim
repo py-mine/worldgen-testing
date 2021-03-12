@@ -95,9 +95,12 @@ proc dumpToObjFile(file: FileStream, chunk: array[0..256, array[0..16, array[0..
             for y2 in [y - 1, y + 1]:
               for z2 in [z - 1, z + 1]:
                 for x2 in [x - 1, x + 1]:
-                  if chunk[y2][z2][x2] == 0:
-                    visible = true
-                    raise newException(BreakOutOfLoops, "yeef")
+                  try:
+                    if chunk[y2][z2][x2] == 0:
+                      visible = true
+                      raise newException(BreakOutOfLoops, "yeet")
+                  except IndexDefect:
+                    discard
           except BreakOutOfLoops:
             discard
 
