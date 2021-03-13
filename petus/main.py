@@ -166,8 +166,8 @@ def wormy_bois(chunks, randomness, noise):
             noise_a = noise.noise3d(x, y, z)
             noise_b = noise.noise3d(x * x, y * y, z * z)
 
-            pitch = map_range(noise_a, -1, 1, -360, 360)
-            yaw = map_range(noise_b, -1, 1, -360, 360)
+            pitch = map_range(noise_a, -1, 1, -math.pi, math.pi)
+            yaw = map_range(noise_b, -1, 1, -math.pi, math.pi)
 
             cos_pitch = math.cos(pitch)
 
