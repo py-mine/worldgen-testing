@@ -18,7 +18,7 @@ newmtl diamond_ore
 Kd 0.066 0.894 0.894
 
 newmtl gold_ore
-Kd 1 0 0
+Kd 1 1 0
 
 newmtl iron_ore
 Kd 0.827 0.827 0.827
