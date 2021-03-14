@@ -144,7 +144,7 @@ def noisy_chunk(noise, randomness, chunk_x: int, chunk_z: int) -> list:
 
 def perlin_worms(chunks, randomness, noise):
     segment_len = 3
-    segments = 25
+    segments = 4 * len(chunks)  # of segments need to scale with amount of chunks
     worms = []
 
     for cx, cz in chunks.keys():
