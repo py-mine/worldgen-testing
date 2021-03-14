@@ -144,7 +144,7 @@ def noisy_chunk(noise, randomness, chunk_x: int, chunk_z: int) -> list:
     return chunk
 
 
-def wormy_bois(chunks, randomness, noise):
+def perlin_worms(chunks, randomness, noise):
     segment_len = 3
     segments = 25
     worms = []
@@ -155,13 +155,13 @@ def wormy_bois(chunks, randomness, noise):
         x_offset = cx * 16
         z_offset = cz * 16
 
-        for y in range(5, HEIGHT_FACTOR):
-            for z in range(16):
-                z_zo = z + z_offset
+        for z in range(16):
+            z_zo = z + z_offset
 
-                for x in range(16):
-                    x_xo = x + x_offset
+            for x in range(16):
+                x_xo = x + x_offset
 
+                for y in range(5, HEIGHT_FACTOR):
                     if noise.noise3d(x_xo, y, z_zo) > 0.875:
                         worms.append((x_xo, y, z_zo))
 
@@ -305,12 +305,12 @@ with open("test.obj", "w+") as f:
 
     print(f"Done generating chunks. ({(pf() - start):02.02f} seconds for {len(chunks)} chunks)")
 
-    print("Activating wormy bois...")
+    print("Generating + carving perlin worms...")
     start = pf()
 
-    chunks, n = wormy_bois(chunks, randomness, noise)
+    chunks, n = perlin_worms(chunks, randomness, noise)
 
-    print(f"Wormy bois finished. ({(pf() - start):02.02f} seconds for {n} wormy bois)")
+    print(f"Perlin worms finished. ({(pf() - start):02.02f} seconds for {n} worms)")
 
     print("Dumping to obj file...")
     start = pf()
