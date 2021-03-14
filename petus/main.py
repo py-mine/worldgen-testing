@@ -10,7 +10,21 @@ HEIGHT_FACTOR = 72
 
 # here, a "chunk" refers to a 256x16x16 array of block states
 
-palette = {"air": 0, "bedrock": 1, "stone": 2, "dirt": 3, "grass": 4, "water": 5}
+palette = {
+    "air": 0,
+    "bedrock": 1,
+    "stone": 2,
+    "dirt": 3,
+    "grass": 4,
+    "water": 5,
+    "diamond_ore": 6,
+    "coal_ore": 7,
+    "iron_ore": 8,
+    "gold_ore": 9,
+    "redstone_ore": 10,
+    "lapis_ore": 11,
+    "emerald_ore": 12,
+}
 
 palette = {**palette, **{v: k for k, v in palette.items()}}
 
