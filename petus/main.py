@@ -148,7 +148,7 @@ def perlin_worms(chunks, randomness, noise):
     worms = []
 
     for cx, cz in chunks.keys():
-        chunk = chunks[cx, cz]
+        chunk = chunk
 
         x_offset = cx * 16
         z_offset = cz * 16
@@ -210,6 +210,8 @@ def make_ore_pockets(chunks, randomness, noise):
     pockets = []
 
     for cx, cz in chunks.keys():
+        chunk = chunks[cx, cz]
+
         cx1 = cx * 16
         cz1 = cz * 16
 
@@ -231,7 +233,7 @@ def make_ore_pockets(chunks, randomness, noise):
                         for z in range(d_max_p_dim):
                             for x in range(d_max_p_dim):
                                 if noise.noise3d(cx1 + x, y, cz1 + z) > 0.25:
-                                    chunks[cx, cz][y + max[1]][z + max[2]][x + max[0]] = 6  # diamond ore
+                                    chunk[y + max[1]][z + max[2]][x + max[0]] = 6  # diamond ore
         for v in range(e_veins):
             if (noise.noise2d(cx1 + v / 2, cz1 + v / 2) / 2 + 0.5) < 0.9:
                 # emerald ore
@@ -250,7 +252,7 @@ def make_ore_pockets(chunks, randomness, noise):
                         for z in range(l_max_p_dim):
                             for x in range(l_max_p_dim):
                                 if noise.noise3d(cx + x + max[0], y + 16 * 1 + max[1], cz + z + max[2]) > 0.25:
-                                    chunks[cx, cz][y + max[1]][z + max[2]][x + max[0]] = 11
+                                    chunk[y + max[1]][z + max[2]][x + max[0]] = 11
 
         for v in range(g_veins):
             if (noise.noise2d(cx1 + v / 2, cz1 + v / 2) / 2 + 0.5) < 0.9:
@@ -269,7 +271,7 @@ def make_ore_pockets(chunks, randomness, noise):
                         for z in range(g_max_p_dim):
                             for x in range(g_max_p_dim):
                                 if noise.noise3d(cx + x + max[0], y + 16 * 2 + max[1], cz + z + max[2]) > 0.25:
-                                    chunks[cx, cz][y + max[1]][z + max[2]][x + max[0]] = 9
+                                    chunk[y + max[1]][z + max[2]][x + max[0]] = 9
 
         for v in range(l_veins):
             if (noise.noise2d(cx1 + v / 2, cz1 + v / 2) / 2 + 0.5) < 0.9:
@@ -288,7 +290,7 @@ def make_ore_pockets(chunks, randomness, noise):
                         for z in range(l_max_p_dim):
                             for x in range(l_max_p_dim):
                                 if noise.noise3d(cx + x + max[0], y + 16 * 3 + max[1], cz + z + max[2]) > 0.25:
-                                    chunks[cx, cz][y + max[1]][z + max[2]][x + max[0]] = 11
+                                    chunk[y + max[1]][z + max[2]][x + max[0]] = 11
 
         for v in range(r_veins):
             if (noise.noise2d(cx1 + v / 2, cz1 + v / 2) / 2 + 0.5) < 0.9:
@@ -307,7 +309,7 @@ def make_ore_pockets(chunks, randomness, noise):
                         for z in range(r_max_p_dim):
                             for x in range(r_max_p_dim):
                                 if noise.noise3d(cx + x + max[0], y + 16 * 4 + max[1], cz + z + max[2]) > 0.25:
-                                    chunks[cx, cz][y + max[1]][z + max[2]][x + max[0]] = 10
+                                    chunk[y + max[1]][z + max[2]][x + max[0]] = 10
 
         for v in range(i_veins):
             if (noise.noise2d(cx1 + v / 2, cz1 + v / 2) / 2 + 0.5) < 0.9:
@@ -327,7 +329,7 @@ def make_ore_pockets(chunks, randomness, noise):
                         for z in range(i_max_p_dim[1]):
                             for x in range(i_max_p_dim[2]):
                                 if noise.noise3d(cx + x + max[0], y + 16 * 5 + max[1], cz + z + max[2]) > 0.25:
-                                    chunks[cx, cz][y + max[1]][z + max[2]][x + max[0]] = 8
+                                    chunk[y + max[1]][z + max[2]][x + max[0]] = 8
 
         for v in range(c_veins):
             if (noise.noise2d(cx1 + v / 2, cz1 + v / 2) / 2 + 0.5) < 0.9:
@@ -347,7 +349,7 @@ def make_ore_pockets(chunks, randomness, noise):
                         for z in range(c_max_p_dim[1]):
                             for x in range(c_max_p_dim[2]):
                                 if noise.noise3d(cx + x + max[0], y + 16 * 6 + max[1], cz + z + max[2]) > 0.25:
-                                    chunks[cx, cz][y + max[1]][z + max[2]][x + max[0]] = 7
+                                    chunk[y + max[1]][z + max[2]][x + max[0]] = 7
 
     return chunks
 
@@ -369,7 +371,7 @@ def dump_to_obj(file, chunks: dict) -> None:
             rfaces[f] = len(faces) - 1
 
     for cx, cz in chunks.keys():
-        chunk = chunks[cx, cz]
+        chunk = chunk
 
         cxo = cx * 16
         czo = cz * 16
