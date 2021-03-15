@@ -192,16 +192,19 @@ def make_ore_pockets(chunks, randomness, noise):
     py = 0
     pz = 0
     pockets = []
+    cc=0
     for cx, cz in chunks.keys():
+        cc+=1
+        print(cc)
         cx1 = cx*16
         cz1 = cz*16
         for v in range(d_veins):
-            if (noise.noise2d(cx1+v,cz1+v)/2+0.5)<0.9:
+            if (noise.noise2d(cx1+v,cz1+v)/2+0.5)<0.85:
                 # diamond ore
                 max = (0,0,0,0)
                 for y in range(1,17):
-                    for z in range(15):
-                        for x in range(15):
+                    for z in range(14):
+                        for x in range(14):
                             n = noise.noise3d(x+cx1+v/2, y, z+cz1+v/2)/2+0.5
                             if n>max[3]:
                                 max = (x,y,z,n)
@@ -210,9 +213,10 @@ def make_ore_pockets(chunks, randomness, noise):
                         for z in range(d_max_p_dim):
                             for x in range(d_max_p_dim):
                                 if noise.noise3d(cx1+x, y, cz1+z)>0.25:
-                                    chunks[cx,cz][y+max[1]][z+max[2]][x+max[0]] = 6 #diamond ore
+                                    if chunks[cx,cz][y+max[1]][z+max[2]][x+max[0]] in (2,):
+                                        chunks[cx,cz][y+max[1]][z+max[2]][x+max[0]] = 6 #diamond ore
         for v in range(e_veins):
-            if (noise.noise2d(cx1+v/2,cz1+v/2)/2+0.5)<0.9:
+            if (noise.noise2d(cx1+v/2,cz1+v/2)/2+0.5)<0.85:
                 # emerald ore
                 max = (0,0,0,0)
                 for y in range(1,32):
@@ -222,18 +226,19 @@ def make_ore_pockets(chunks, randomness, noise):
                             if n>max[3]:
                                 max = (x,y,z,n)
                 if max[3]>0.85:
-                    for y in range(l_max_p_dim):
-                        for z in range(l_max_p_dim):
-                            for x in range(l_max_p_dim):
+                    for y in range(e_max_p_dim):
+                        for z in range(e_max_p_dim):
+                            for x in range(e_max_p_dim):
                                 if noise.noise3d(cx+x+max[0], y+16*1+max[1], cz+z+max[2])>0.25:
-                                    chunks[cx,cz][y+max[1]][z+max[2]][x+max[0]] = 11
+                                    if chunks[cx,cz][y+max[1]][z+max[2]][x+max[0]] in (2,):
+                                        chunks[cx,cz][y+max[1]][z+max[2]][x+max[0]] = 12
         for v in range(g_veins):
-            if (noise.noise2d(cx1+v/2,cz1+v/2)/2+0.5)<0.9:
+            if (noise.noise2d(cx1+v/2,cz1+v/2)/2+0.5)<0.85:
                 # gold ore
                 max = (0,0,0,0)
                 for y in range(2,28):
-                    for z in range(15):
-                        for x in range(15):
+                    for z in range(14):
+                        for x in range(14):
                             n = noise.noise3d(x+cx1+v/2, y+16*2, z+cz1+v/2)/2+0.5
                             if n>max[3]:
                                 max = (x,y,z,n)
@@ -242,15 +247,16 @@ def make_ore_pockets(chunks, randomness, noise):
                         for z in range(g_max_p_dim):
                             for x in range(g_max_p_dim):
                                 if noise.noise3d(cx+x+max[0], y+16*2+max[1], cz+z+max[2])>0.25:
-                                    chunks[cx,cz][y+max[1]][z+max[2]][x+max[0]] = 9
+                                    if chunks[cx,cz][y+max[1]][z+max[2]][x+max[0]] in (2,):
+                                        chunks[cx,cz][y+max[1]][z+max[2]][x+max[0]] = 9
 
         for v in range(l_veins):
-            if (noise.noise2d(cx1+v/2,cz1+v/2)/2+0.5)<0.9:
+            if (noise.noise2d(cx1+v/2,cz1+v/2)/2+0.5)<0.85:
                 # lapis ore
                 max = (0,0,0,0)
                 for y in range(1,30):
-                    for z in range(15):
-                        for x in range(15):
+                    for z in range(14):
+                        for x in range(14):
                             n = noise.noise3d(x+cx1+v/2, y+16*3, z+cz1+v/2)/2+0.5
                             if n>max[3]:
                                 max = (x,y,z,n)
@@ -259,15 +265,16 @@ def make_ore_pockets(chunks, randomness, noise):
                         for z in range(l_max_p_dim):
                             for x in range(l_max_p_dim):
                                 if noise.noise3d(cx+x+max[0], y+16*3+max[1], cz+z+max[2])>0.25:
-                                    chunks[cx,cz][y+max[1]][z+max[2]][x+max[0]] = 11
-
+                                    if chunks[cx,cz][y+max[1]][z+max[2]][x+max[0]] in (2,):
+                                        chunks[cx,cz][y+max[1]][z+max[2]][x+max[0]] = 11
+        print("redstone")
         for v in range(r_veins):
-            if (noise.noise2d(cx1+v/2,cz1+v/2)/2+0.5)<0.9:
+            if (noise.noise2d(cx1+v/2,cz1+v/2)/2+0.5)<0.85:
                 # redstone ore
                 max = (0,0,0,0)
                 for y in range(1,15):
-                    for z in range(15):
-                        for x in range(15):
+                    for z in range(14):
+                        for x in range(14):
                             n = noise.noise3d(x+cx1+v/2, y+16*4, z+cz1+v/2)/2+0.5
                             if n>max[3]:
                                 max = (x,y,z,n)
@@ -276,9 +283,11 @@ def make_ore_pockets(chunks, randomness, noise):
                         for z in range(r_max_p_dim):
                             for x in range(r_max_p_dim):
                                 if noise.noise3d(cx+x+max[0], y+16*4+max[1], cz+z+max[2])>0.25:
-                                    chunks[cx,cz][y+max[1]][z+max[2]][x+max[0]] = 10
+                                    if chunks[cx,cz][y+max[1]][z+max[2]][x+max[0]] in (2,):
+                                        chunks[cx,cz][y+max[1]][z+max[2]][x+max[0]] = 10
+        print("iron")
         for v in range(i_veins):
-            if (noise.noise2d(cx1+v/2,cz1+v/2)/2+0.5)<0.9:
+            if (noise.noise2d(cx1+v/2,cz1+v/2)/2+0.5)<0.85:
                 # iron ore
                 max = (0,0,0,0)
                 for y in range(1,63):
@@ -292,10 +301,12 @@ def make_ore_pockets(chunks, randomness, noise):
                         for z in range(i_max_p_dim[1]):
                             for x in range(i_max_p_dim[2]):
                                 if noise.noise3d(cx+x+max[0], y+16*5+max[1], cz+z+max[2])>0.25:
-                                    chunks[cx,cz][y+max[1]][z+max[2]][x+max[0]] = 8
+                                    if chunks[cx,cz][y+max[1]][z+max[2]][x+max[0]] in (2,):
+                                        chunks[cx,cz][y+max[1]][z+max[2]][x+max[0]] =  8
+        print("coal")
         for v in range(c_veins):
-            if (noise.noise2d(cx1+v/2,cz1+v/2)/2+0.5)<0.9:
-                # iron ore
+            if (noise.noise2d(cx1+v/2,cz1+v/2)/2+0.5)<0.85:
+                # coal ore
                 max = (0,0,0,0)
                 for y in range(1,128):
                     for z in range(14):
@@ -308,7 +319,8 @@ def make_ore_pockets(chunks, randomness, noise):
                         for z in range(c_max_p_dim[1]):
                             for x in range(c_max_p_dim[2]):
                                 if noise.noise3d(cx+x+max[0], y+16*6+max[1], cz+z+max[2])>0.25:
-                                    chunks[cx,cz][y+max[1]][z+max[2]][x+max[0]] = 7
+                                    if chunks[cx,cz][y+max[1]][z+max[2]][x+max[0]] in (2,):
+                                        chunks[cx,cz][y+max[1]][z+max[2]][x+max[0]] = 7
 
     return chunks
 
@@ -366,12 +378,12 @@ def dump_to_obj(file, chunks: dict) -> None:
                 for x in range(16):
                     block = chunk[y][z][x]
 
-                    if chunk[y][z][x] not in (6, 7, 8, 9, 10, 11, 12):  # ores only
+                    if chunk[y][z][x] == 0:  # air
                         continue
 
                     visible = False
 
-                    if z == 0 or x == 0:
+                    if z == 16 or x == 16:
                         visible = True
                     else:
                         for y2 in (y - 1, y + 1):
@@ -430,19 +442,19 @@ with open("test.obj", "w+") as f:
 
     print(f"Done generating chunks. ({(pf() - start):02.02f} seconds for {len(chunks)} chunks)")
 
-    print("Adding ore pockets...")
-    start = pf()
-
-    chunks = make_ore_pockets(chunks, randomness, noise)
-
-    print(f"Ore pockets made! ({(pf()-start):02.02f} seconds)")
-
-    print("Activating wormy bois...")
-    start = pf()
-
-    chunks, n = wormy_bois(chunks, randomness, noise)
-
-    print(f"Wormy bois finished. ({(pf() - start):02.02f} seconds for {n} wormy bois)")
+    # print("Adding ore pockets...")
+    # start = pf()
+    #
+    # chunks = make_ore_pockets(chunks, randomness, noise)
+    #
+    # print(f"Ore pockets made! ({(pf()-start):02.02f} seconds)")
+    #
+    # print("Activating wormy bois...")
+    # start = pf()
+    #
+    # chunks, n = wormy_bois(chunks, randomness, noise)
+    #
+    # print(f"Wormy bois finished. ({(pf() - start):02.02f} seconds for {n} wormy bois)")
 
     print("Dumping to obj file...")
     start = pf()
