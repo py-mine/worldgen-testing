@@ -275,18 +275,26 @@ def make_ore_pockets(chunks, randomness, noise):
                 max_ = (0, 0, 0, 0)
 
                 for y in range(2, 28):
+                    yc = y + 16 * 2
+
                     for z in range(15):
+                        zc = z + cz1 + v / 2
+
                         for x in range(15):
-                            n = noise.noise3d(x + cx1 + v / 2, y + 16 * 2, z + cz1 + v / 2) / 2 + 0.5
+                            n = noise.noise3d(x + cx1 + v / 2, yc, zc) / 2 + 0.5
 
                             if n > max_[3]:
                                 max_ = (x, y, z, n)
 
                 if max_[3] > 0.85:
                     for y in range(g_max_p_dim):
+                        yc = y + 16 * 2 + max_[1]
+
                         for z in range(g_max_p_dim):
+                            zc = cz + z + max_[2]
+
                             for x in range(g_max_p_dim):
-                                if noise.noise3d(cx + x + max_[0], y + 16 * 2 + max_[1], cz + z + max_[2]) > 0.25:
+                                if noise.noise3d(cx + x + max_[0], yc, zc) > 0.25:
                                     chunk[y + max_[1]][z + max_[2]][x + max_[0]] = 9
 
         for v in range(l_veins):
@@ -295,18 +303,26 @@ def make_ore_pockets(chunks, randomness, noise):
                 max_ = (0, 0, 0, 0)
 
                 for y in range(1, 30):
+                    yc = y + 16 * 3
+
                     for z in range(15):
+                        zc = z + cz1 + v / 2
+
                         for x in range(15):
-                            n = noise.noise3d(x + cx1 + v / 2, y + 16 * 3, z + cz1 + v / 2) / 2 + 0.5
+                            n = noise.noise3d(x + cx1 + v / 2, yc, zc) / 2 + 0.5
 
                             if n > max_[3]:
                                 max_ = (x, y, z, n)
 
                 if max_[3] > 0.85:
                     for y in range(l_max_p_dim):
+                        yc = y + 16 * 3 + max_[1]
+
                         for z in range(l_max_p_dim):
+                            zc = cz + z + max_[2]
+
                             for x in range(l_max_p_dim):
-                                if noise.noise3d(cx + x + max_[0], y + 16 * 3 + max_[1], cz + z + max_[2]) > 0.25:
+                                if noise.noise3d(cx + x + max_[0], yc, zc) > 0.25:
                                     chunk[y + max_[1]][z + max_[2]][x + max_[0]] = 11
 
         for v in range(r_veins):
@@ -315,18 +331,26 @@ def make_ore_pockets(chunks, randomness, noise):
                 max_ = (0, 0, 0, 0)
 
                 for y in range(1, 15):
+                    yc = y + 16 * 4
+
                     for z in range(15):
+                        zc = z + cz1 + v / 2
+
                         for x in range(15):
-                            n = noise.noise3d(x + cx1 + v / 2, y + 16 * 4, z + cz1 + v / 2) / 2 + 0.5
+                            n = noise.noise3d(x + cx1 + v / 2, yc, zc) / 2 + 0.5
 
                             if n > max_[3]:
                                 max_ = (x, y, z, n)
 
                 if max_[3] > 0.85:
                     for y in range(r_max_p_dim):
+                        yc = y + 16 * 4 + max_[1]
+
                         for z in range(r_max_p_dim):
+                            zc = cz + z + max_[2]
+
                             for x in range(r_max_p_dim):
-                                if noise.noise3d(cx + x + max_[0], y + 16 * 4 + max_[1], cz + z + max_[2]) > 0.25:
+                                if noise.noise3d(cx + x + max_[0], yc, zc) > 0.25:
                                     chunk[y + max_[1]][z + max_[2]][x + max_[0]] = 10
 
         for v in range(i_veins):
@@ -335,18 +359,26 @@ def make_ore_pockets(chunks, randomness, noise):
                 max_ = (0, 0, 0, 0)
 
                 for y in range(1, 63):
+                    yc = y + 16 * 5
+
                     for z in range(14):
+                        z + cz1 + v / 2
+
                         for x in range(14):
-                            n = noise.noise3d(x + cx1 + v / 2, y + 16 * 5, z + cz1 + v / 2) / 2 + 0.5
+                            n = noise.noise3d(x + cx1 + v / 2, yc, zc) / 2 + 0.5
 
                             if n > max_[3]:
                                 max_ = (x, y, z, n)
 
                 if max_[3] > 0.85:
                     for y in range(i_max_p_dim[0]):
+                        yc = y + 16 * 5 + max_[1]
+
                         for z in range(i_max_p_dim[1]):
+                            zc = cz + z + max_[2]
+
                             for x in range(i_max_p_dim[2]):
-                                if noise.noise3d(cx + x + max_[0], y + 16 * 5 + max_[1], cz + z + max_[2]) > 0.25:
+                                if noise.noise3d(cx + x + max_[0], yc, zc) > 0.25:
                                     chunk[y + max_[1]][z + max_[2]][x + max_[0]] = 8
 
         for v in range(c_veins):
@@ -355,18 +387,26 @@ def make_ore_pockets(chunks, randomness, noise):
                 max_ = (0, 0, 0, 0)
 
                 for y in range(1, 128):
+                    yc = y + 16 * 6
+
                     for z in range(14):
+                        zc = z + cz1 + v / 2
+
                         for x in range(14):
-                            n = noise.noise3d(x + cx1 + v / 2, y + 16 * 6, z + cz1 + v / 2) / 2 + 0.5
+                            n = noise.noise3d(x + cx1 + v / 2, yc, zc) / 2 + 0.5
 
                             if n > max_[3]:
                                 max_ = (x, y, z, n)
 
                 if max_[3] > 0.85:
                     for y in range(c_max_p_dim[0]):
+                        yc = y + 16 * 6 + max_[1]
+
                         for z in range(c_max_p_dim[1]):
+                            zc = cz + z + max_[2]
+
                             for x in range(c_max_p_dim[2]):
-                                if noise.noise3d(cx + x + max_[0], y + 16 * 6 + max_[1], cz + z + max_[2]) > 0.25:
+                                if noise.noise3d(cx + x + max_[0], yc, zc) > 0.25:
                                     chunk[y + max_[1]][z + max_[2]][x + max_[0]] = 7
 
     return chunks
