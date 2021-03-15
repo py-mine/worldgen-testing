@@ -10,7 +10,21 @@ HEIGHT_FACTOR = 72
 
 # here, a "chunk" refers to a 256x16x16 array of block states
 
-palette = {"air": 0, "bedrock": 1, "stone": 2, "dirt": 3, "grass": 4, "water": 5}
+palette = {
+    "air": 0,
+    "bedrock": 1,
+    "stone": 2,
+    "dirt": 3,
+    "grass": 4,
+    "water": 5,
+    "diamond_ore": 6,
+    "coal_ore": 7,
+    "iron_ore": 8,
+    "gold_ore": 9,
+    "redstone_ore": 10,
+    "lapis_ore": 11,
+    "emerald_ore": 12,
+}
 
 palette = {**palette, **{v: k for k, v in palette.items()}}
 
@@ -39,17 +53,15 @@ def remove_sphere(chunks: dict, y: int, z: int, x: int, radius: int) -> None:
     for y2 in range(y - radius, y + radius):
         for z2 in range(z - radius, z + radius):
             for x2 in range(x - radius, x + radius):
-                d = distance(y, z, x, y2, z2, x2)
-
-                if d < radius:
-                    cx = math.floor(x2 / 16)
-                    cz = math.floor(z2 / 16)
-
+                if distance(y, z, x, y2, z2, x2) < radius:
                     try:
-                        if chunks[cx, cz][y2][z2 % 16][x2 % 16] == 2:
-                            chunks[cx, cz][y2][z2 % 16][x2 % 16] = 0  # air
+                        chunk = chunks[x2 // 16, z2 // 16]
                     except KeyError:
-                        pass
+                        continue
+
+                    if chunk[y2][z2 % 16][x2 % 16] == 2:
+                        chunk[y2][z2 % 16][x2 % 16] = 0  # air
+
     return chunks
 
 
@@ -130,9 +142,9 @@ def noisy_chunk(noise, randomness, chunk_x: int, chunk_z: int) -> list:
     return chunk
 
 
-def wormy_bois(chunks, randomness, noise):
+def perlin_worms(chunks, randomness, noise):
     segment_len = 3
-    segments = 25
+    segments = 4 * len(chunks)  # of segments need to scale with amount of chunks
     worms = []
 
     for cx, cz in chunks.keys():
@@ -141,25 +153,15 @@ def wormy_bois(chunks, randomness, noise):
         x_offset = cx * 16
         z_offset = cz * 16
 
-        for y in range(5, HEIGHT_FACTOR):
-            for z in range(16):
-                z_zo = z + z_offset
+        for z in range(16):
+            z_zo = z + z_offset
 
-                for x in range(16):
-                    x_xo = x + x_offset
+            for x in range(16):
+                x_xo = x + x_offset
 
+                for y in range(5, HEIGHT_FACTOR):
                     if noise.noise3d(x_xo, y, z_zo) > 0.875:
                         worms.append((x_xo, y, z_zo))
-
-        # if noise.noise2d(x_offset*4, z_offset*4) > 0.875:
-        #     max = (0, 0, 0, 0)
-        #     for y in range(5, 128):
-        #         for z in range(16):
-        #             for x in range(16):
-        #                 n = noise.noise3d(x+x_offset, y, z+z_offset)
-        #                 if n > max[3]:
-        #                     max = (x, y, z, n)
-        #     worms += [(max[0]+x_offset, max[1], max[2]+z_offset)]
 
     for x, y, z in worms:
         for s in range(segments):
@@ -183,6 +185,171 @@ def wormy_bois(chunks, randomness, noise):
                 x += xi
 
     return chunks, len(worms)
+
+
+def make_ore_pockets(chunks, randomness, noise):
+    d_veins = 1
+    d_max_p_dim = 2
+    e_veins = 0  # 11 for mountains
+    e_max_p_dim = 1
+    g_veins = 30
+    g_max_p_dim = 2
+    l_veins = 1
+    l_max_p_dim = 2
+    r_veins = 8
+    r_max_p_dim = 2
+    i_veins = 20
+    i_max_p_dim = (3, 2, 2)
+    c_veins = 20
+    c_max_p_dim = (3, 3, 2)
+
+    px = 0
+    py = 0
+    pz = 0
+
+    pockets = []
+
+    for cx, cz in chunks.keys():
+        cx1 = cx * 16
+        cz1 = cz * 16
+
+        for v in range(d_veins):
+            if (noise.noise2d(cx1 + v, cz1 + v) / 2 + 0.5) < 0.9:
+                # diamond ore
+                max = (0, 0, 0, 0)
+
+                for y in range(1, 17):
+                    for z in range(15):
+                        for x in range(15):
+                            n = noise.noise3d(x + cx1 + v / 2, y, z + cz1 + v / 2) / 2 + 0.5
+
+                            if n > max[3]:
+                                max = (x, y, z, n)
+
+                if max[3] > 0.85:
+                    for y in range(d_max_p_dim):
+                        for z in range(d_max_p_dim):
+                            for x in range(d_max_p_dim):
+                                if noise.noise3d(cx1 + x, y, cz1 + z) > 0.25:
+                                    chunks[cx, cz][y + max[1]][z + max[2]][x + max[0]] = 6  # diamond ore
+        for v in range(e_veins):
+            if (noise.noise2d(cx1 + v / 2, cz1 + v / 2) / 2 + 0.5) < 0.9:
+                # emerald ore
+                max = (0, 0, 0, 0)
+
+                for y in range(1, 32):
+                    for z in range(16):
+                        for x in range(16):
+                            n = noise.noise3d(x + cx1 + v / 2, y + 16 * 1, z + cz1 + v / 2) / 2 + 0.5
+
+                            if n > max[3]:
+                                max = (x, y, z, n)
+
+                if max[3] > 0.85:
+                    for y in range(l_max_p_dim):
+                        for z in range(l_max_p_dim):
+                            for x in range(l_max_p_dim):
+                                if noise.noise3d(cx + x + max[0], y + 16 * 1 + max[1], cz + z + max[2]) > 0.25:
+                                    chunks[cx, cz][y + max[1]][z + max[2]][x + max[0]] = 11
+
+        for v in range(g_veins):
+            if (noise.noise2d(cx1 + v / 2, cz1 + v / 2) / 2 + 0.5) < 0.9:
+                # gold ore
+                max = (0, 0, 0, 0)
+
+                for y in range(2, 28):
+                    for z in range(15):
+                        for x in range(15):
+                            n = noise.noise3d(x + cx1 + v / 2, y + 16 * 2, z + cz1 + v / 2) / 2 + 0.5
+                            if n > max[3]:
+                                max = (x, y, z, n)
+
+                if max[3] > 0.85:
+                    for y in range(g_max_p_dim):
+                        for z in range(g_max_p_dim):
+                            for x in range(g_max_p_dim):
+                                if noise.noise3d(cx + x + max[0], y + 16 * 2 + max[1], cz + z + max[2]) > 0.25:
+                                    chunks[cx, cz][y + max[1]][z + max[2]][x + max[0]] = 9
+
+        for v in range(l_veins):
+            if (noise.noise2d(cx1 + v / 2, cz1 + v / 2) / 2 + 0.5) < 0.9:
+                # lapis ore
+                max = (0, 0, 0, 0)
+
+                for y in range(1, 30):
+                    for z in range(15):
+                        for x in range(15):
+                            n = noise.noise3d(x + cx1 + v / 2, y + 16 * 3, z + cz1 + v / 2) / 2 + 0.5
+                            if n > max[3]:
+                                max = (x, y, z, n)
+
+                if max[3] > 0.85:
+                    for y in range(l_max_p_dim):
+                        for z in range(l_max_p_dim):
+                            for x in range(l_max_p_dim):
+                                if noise.noise3d(cx + x + max[0], y + 16 * 3 + max[1], cz + z + max[2]) > 0.25:
+                                    chunks[cx, cz][y + max[1]][z + max[2]][x + max[0]] = 11
+
+        for v in range(r_veins):
+            if (noise.noise2d(cx1 + v / 2, cz1 + v / 2) / 2 + 0.5) < 0.9:
+                # redstone ore
+                max = (0, 0, 0, 0)
+
+                for y in range(1, 15):
+                    for z in range(15):
+                        for x in range(15):
+                            n = noise.noise3d(x + cx1 + v / 2, y + 16 * 4, z + cz1 + v / 2) / 2 + 0.5
+                            if n > max[3]:
+                                max = (x, y, z, n)
+
+                if max[3] > 0.85:
+                    for y in range(r_max_p_dim):
+                        for z in range(r_max_p_dim):
+                            for x in range(r_max_p_dim):
+                                if noise.noise3d(cx + x + max[0], y + 16 * 4 + max[1], cz + z + max[2]) > 0.25:
+                                    chunks[cx, cz][y + max[1]][z + max[2]][x + max[0]] = 10
+
+        for v in range(i_veins):
+            if (noise.noise2d(cx1 + v / 2, cz1 + v / 2) / 2 + 0.5) < 0.9:
+                # iron ore
+                max = (0, 0, 0, 0)
+
+                for y in range(1, 63):
+                    for z in range(14):
+                        for x in range(14):
+                            n = noise.noise3d(x + cx1 + v / 2, y + 16 * 5, z + cz1 + v / 2) / 2 + 0.5
+
+                            if n > max[3]:
+                                max = (x, y, z, n)
+
+                if max[3] > 0.85:
+                    for y in range(i_max_p_dim[0]):
+                        for z in range(i_max_p_dim[1]):
+                            for x in range(i_max_p_dim[2]):
+                                if noise.noise3d(cx + x + max[0], y + 16 * 5 + max[1], cz + z + max[2]) > 0.25:
+                                    chunks[cx, cz][y + max[1]][z + max[2]][x + max[0]] = 8
+
+        for v in range(c_veins):
+            if (noise.noise2d(cx1 + v / 2, cz1 + v / 2) / 2 + 0.5) < 0.9:
+                # iron ore
+                max = (0, 0, 0, 0)
+
+                for y in range(1, 128):
+                    for z in range(14):
+                        for x in range(14):
+                            n = noise.noise3d(x + cx1 + v / 2, y + 16 * 6, z + cz1 + v / 2) / 2 + 0.5
+
+                            if n > max[3]:
+                                max = (x, y, z, n)
+
+                if max[3] > 0.85:
+                    for y in range(c_max_p_dim[0]):
+                        for z in range(c_max_p_dim[1]):
+                            for x in range(c_max_p_dim[2]):
+                                if noise.noise3d(cx + x + max[0], y + 16 * 6 + max[1], cz + z + max[2]) > 0.25:
+                                    chunks[cx, cz][y + max[1]][z + max[2]][x + max[0]] = 7
+
+    return chunks
 
 
 def dump_to_obj(file, chunks: dict) -> None:
@@ -301,12 +468,15 @@ with open("test.obj", "w+") as f:
 
     print(f"Done generating chunks. ({(pf() - start):02.02f} seconds for {len(chunks)} chunks)")
 
-    print("Activating wormy bois...")
+    print("Adding ore pockets...")
     start = pf()
+    chunks = make_ore_pockets(chunks, randomness, noise)
+    print(f"Ore pockets made! ({(pf()-start):02.02f} seconds)")
 
-    chunks, n = wormy_bois(chunks, randomness, noise)
-
-    print(f"Wormy bois finished. ({(pf() - start):02.02f} seconds for {n} wormy bois)")
+    print("Generating + carving perlin worms...")
+    start = pf()
+    chunks, n = perlin_worms(chunks, randomness, noise)
+    print(f"Perlin worms finished. ({(pf() - start):02.02f} seconds for {n} worms)")
 
     print("Dumping to obj file...")
     start = pf()
